@@ -63,7 +63,7 @@ class DAG(object):
         if is_valid:
             graph[ind_node].add(dep_node)
         else:
-            raise DAGValidationError()
+            raise DAGValidationError(message)
 
     def delete_edge(self, ind_node, dep_node, graph=None):
         """ Delete an edge from the graph. """
@@ -148,29 +148,29 @@ class DAG(object):
         self.graph = OrderedDict()
 
     def ind_nodes(self, graph=None, ignore_nodes=set()):
-        """ Returns a list of all nodes in the graph with no dependencies.
-            *ignore_nodes* is a list or set of nodes to ignore.  This will calculate the independent nodes
-            as if these nodes and their corresponding edges were not part of the graph.
-   
-            This makes it easy to get the leaves in waves in order to correctly process tasks in
-            a dependency graph, just pass all nodes from previous calls to get the next wave of tasks which
-            have had their dependencies fulfilled.  When an empty set is returned, you're done.
+        """ 
+           it will get the nodes from which is the first node of the dag 
         """
         if graph is None:
             graph = self.graph
 
-        if type(ignore_nodes) == list:
-            ignore = set(ignore_nodes)
-        elif type(ignore_nodes) == set:
-            ignore = ignore_nodes
+        all_values = [val for val in six.itervalues(graph)]
+        all_nodes = [node for node in six.iterkeys(graph)]
+        ind_nodes = []
 
-        # Independent nodes
-        inodes = set()
-        for node, downstream_nodes in six.iteritems(graph):
-            if len(downstream_nodes - ignore) == 0 and node not in ignore:
-                inodes.update(set([node]))
+        for node in all_nodes:
+            for val in all_values:
+                if node in val:
+                    break
+            else:
+                ind_nodes.append(node)
 
-        return inodes
+        return ind_nodes
+
+
+
+
+        # return [node for node in graph.keys() if node not in dependent_nodes]
 
     def validate(self, graph=None):
         """ Returns (Boolean, message) of whether DAG is valid. """
