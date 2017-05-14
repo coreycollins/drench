@@ -1,5 +1,6 @@
 from copy import copy, deepcopy
 from collections import deque
+import six
 
 try:
     from collections import OrderedDict
@@ -40,7 +41,7 @@ class DAG(object):
             raise KeyError('node %s does not exist' % node_name)
         graph.pop(node_name)
 
-        for node, edges in graph.iteritems():
+        for node, edges in six.iteritems(graph):
             if node_name in edges:
                 edges.remove(node_name)
 
@@ -55,7 +56,7 @@ class DAG(object):
         if not graph:
             graph = self.graph
         if ind_node not in graph or dep_node not in graph:
-            raise KeyError('one or more nodes do not exist in graph')
+            raise KeyError('one or more nodes do not exist in graph: {} / {}'.format(ind_node, dep_node))
         test_graph = deepcopy(graph)
         test_graph[ind_node].add(dep_node)
         is_valid, message = self.validate(test_graph)
@@ -117,7 +118,9 @@ class DAG(object):
                     nodes_seen.add(downstream_node)
                     nodes.append(downstream_node)
             i += 1
-        return filter(lambda node: node in nodes_seen, self.topological_sort(graph=graph))
+
+        result = filter(lambda node: node in nodes_seen, self.topological_sort(graph=graph))
+        return [n for n in result]
 
     def all_leaves(self, graph=None):
         """ Return a list of all leaves (nodes with no downstreams) """
@@ -132,9 +135,9 @@ class DAG(object):
         """
 
         self.reset_graph()
-        for new_node in graph_dict.iterkeys():
+        for new_node in six.iterkeys(graph_dict):
             self.add_node(new_node)
-        for ind_node, dep_nodes in graph_dict.iteritems():
+        for ind_node, dep_nodes in six.iteritems(graph_dict):
             if not isinstance(dep_nodes, list):
                 raise TypeError('dict values must be lists')
             for dep_node in dep_nodes:
@@ -144,13 +147,30 @@ class DAG(object):
         """ Restore the graph to an empty state. """
         self.graph = OrderedDict()
 
-    def ind_nodes(self, graph=None):
-        """ Returns a list of all nodes in the graph with no dependencies. """
+    def ind_nodes(self, graph=None, ignore_nodes=set()):
+        """ Returns a list of all nodes in the graph with no dependencies.
+            *ignore_nodes* is a list or set of nodes to ignore.  This will calculate the independent nodes
+            as if these nodes and their corresponding edges were not part of the graph.
+   
+            This makes it easy to get the leaves in waves in order to correctly process tasks in
+            a dependency graph, just pass all nodes from previous calls to get the next wave of tasks which
+            have had their dependencies fulfilled.  When an empty set is returned, you're done.
+        """
         if graph is None:
             graph = self.graph
 
-        dependent_nodes = set(node for dependents in graph.itervalues() for node in dependents)
-        return [node for node in graph.keys() if node not in dependent_nodes]
+        if type(ignore_nodes) == list:
+            ignore = set(ignore_nodes)
+        elif type(ignore_nodes) == set:
+            ignore = ignore_nodes
+
+        # Independent nodes
+        inodes = set()
+        for node, downstream_nodes in six.iteritems(graph):
+            if len(downstream_nodes - ignore) == 0 and node not in ignore:
+                inodes.update(set([node]))
+
+        return inodes
 
     def validate(self, graph=None):
         """ Returns (Boolean, message) of whether DAG is valid. """
