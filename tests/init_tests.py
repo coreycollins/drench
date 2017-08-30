@@ -2,21 +2,29 @@
 
 from nose import with_setup
 from nose.tools import nottest, raises
-from dag import DAG, DAGValidationError
+from dag import DAG, DAGValidationError, Job, ClientWrapper
 
 dag = None
+jobs = [
+    Job(jobName="a")
+]
 
+@nottest
+def wrapper_test(**kwargs):
+    return 1
 
 @nottest
 def blank_setup():
     global dag
-    dag = DAG()
+    client = ClientWrapper(wrapper_test)
+    dag = DAG(jobs, client)
 
 
 @nottest
 def start_with_graph():
     global dag
-    dag = DAG()
+    client = ClientWrapper(wrapper_test)
+    dag = DAG(jobs, client)
     dag.from_dict({'a': ['b', 'c'],
                    'b': ['d'],
                    'c': ['d'],
@@ -61,7 +69,7 @@ def test_reset_graph():
 def test_ind_nodes():
     inodes = dag.ind_nodes(dag.graph)
     print(inodes)
-    assert inodes == set(['d'])
+    assert inodes == ['a']
 
 
 @with_setup(blank_setup)
@@ -98,7 +106,8 @@ def test_all_downstreams():
 
 @with_setup(start_with_graph)
 def test_all_downstreams_pass_graph():
-    dag2 = DAG()
+    client = ClientWrapper(wrapper_test)
+    dag2 = DAG(jobs, client)
     dag2.from_dict({'a': ['c'],
                     'b': ['d'],
                     'c': ['d'],
@@ -126,3 +135,9 @@ def test_size():
     assert dag.size() == 4
     dag.delete_node('a')
     assert dag.size() == 3
+
+@with_setup(start_with_graph)
+def test_run_jobs():
+    assert len(dag.jobs) == 1
+    dag.run()
+    assert jobs[0].id == 1

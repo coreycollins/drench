@@ -7,17 +7,60 @@ try:
 except:
     from ordereddict import OrderedDict
 
+class ClientWrapper(object):
+    """ Client wrapper that can execute any arbitrary func that returns an ID """
+
+    def __init__(self, wrapper_func):
+        self.wrapper = wrapper_func
+
+    def submit(self, **kwargs):
+        return self.wrapper(**kwargs)
+
+class Job(object):
+    def __init__(self, jobName, **kwargs):
+        self.id = None
+        self.jobName = jobName
+        self.kwargs = kwargs
+
+    def set_kwarg(self, key, value):
+        self.kwargs[key] = value
+
+    def submit(self, client):
+        print("Job {}: {}".format(self.jobName, self.kwargs))
+
+        # wrapper function must return an id for the job
+        self.id = client.submit(jobName=self.jobName, **self.kwargs)
 
 class DAGValidationError(Exception):
     pass
 
-
 class DAG(object):
-    """ Directed acyclic graph implementation. """
+    """ Directed acyclic graph implementation that can execute jobs"""
 
-    def __init__(self):
+    def __init__(self, jobs, client):
         """ Construct a new DAG with no nodes or edges. """
+        self.jobs = jobs
         self.reset_graph()
+
+        if (client is ClientWrapper == False):
+            raise "Client is not a ClientWrappe type"
+
+        self.client = client
+
+    def get_job(self, node):
+        try:
+            return next(job for job in self.jobs if job.jobName==node)
+        except StopIteration:
+            return None
+
+    def run(self):
+        """ Execute DAG with ClientWrapper"""
+        for node in self.topological_sort():
+            job = self.get_job(node)
+            if (job):
+                predecessors = [{'jobId':self.get_job(p).id} for p in self.predecessors(node)]
+                job.set_kwarg('dependsOn', predecessors)
+                job.submit(self.client)
 
     def add_node(self, node_name, graph=None):
         """ Add a node if it does not exist yet, or error out. """
@@ -148,8 +191,8 @@ class DAG(object):
         self.graph = OrderedDict()
 
     def ind_nodes(self, graph=None, ignore_nodes=set()):
-        """ 
-           it will get the nodes from which is the first node of the dag 
+        """
+           it will get the nodes from which is the first node of the dag
         """
         if graph is None:
             graph = self.graph

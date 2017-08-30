@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
-from dag import DAG
+from dag import DAG, ClientWrapper
 
-dag = DAG()
+def wrapper_test(**kwargs):
+    print("{}".format(kwargs))
+    return 1
+
+client = ClientWrapper(wrapper_test)
+dag = DAG([],client)
 dag.from_dict(
     {'a': ['b', 'c'],
      'b': ['d'],
