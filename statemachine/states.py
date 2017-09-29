@@ -4,17 +4,10 @@ import json
 class State(object):
     """Base class for a state in the state machine."""
 
-    def __init__(self, Name, Type, Next=None, End=False):
-        self.Name = Name
+    def __init__(self, Type, Next=None, End=False):
         self.Type = Type
         self.Next = Next
         self.End = End
-
-    def toJson(self):
-        def encode_complex(obj):
-            return dict((k, v) for k, v in obj.__dict__.iteritems() if v)
-
-        return json.dumps(self, default=encode_complex)
 
 
 class PassState(State):
