@@ -4,16 +4,13 @@ import json
 
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),'..'))
 from statemachine.batch import BatchFlow
-
-def encode_complex(obj):
-    return dict((k, v) for k, v in obj.__dict__.iteritems() if v)
-
-    return json.dumps(self, default=encode_complex)
+from statemachine.machine import Machine
+from statemachine.states import PassState
 
 flow = BatchFlow(
         Name='test',
-        OnSucceed='suc',
-        OnFail='fail',
+        OnSucceed='finish',
+        OnFail='failed',
         JobQueue='test-queue',
         JobDefinition='test',
         Parameters={
@@ -21,5 +18,10 @@ flow = BatchFlow(
         }
     )
 
-j = json.dumps(flow.states(), default=encode_complex, indent=4, sort_keys=True)
-print(j)
+machine = Machine()
+
+machine.addFlow(flow)
+machine.addState(Name='finish', State=PassState())
+machine.addState(Name='failed', State=PassState())
+
+print(machine.toJson())
