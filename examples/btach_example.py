@@ -7,7 +7,8 @@ from statemachine.batch import BatchFlow
 from statemachine.machine import Machine
 from statemachine.states import PassState
 
-flow = BatchFlow(
+machine = Machine()
+machine.addFlow(BatchFlow(
         Name='test',
         OnSucceed='finish',
         OnFail='failed',
@@ -16,11 +17,7 @@ flow = BatchFlow(
         Parameters={
             'job': 'test'
         }
-    )
-
-machine = Machine()
-
-machine.addFlow(flow)
+))
 machine.addState(Name='finish', State=PassState())
 machine.addState(Name='failed', State=PassState())
 
