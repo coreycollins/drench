@@ -59,7 +59,7 @@ class BatchFlow(object):
                   "Next": self.OnSucceed
                 }
             ],
-            Default='%s.6wait' % prefix
+            Default='%s.3wait' % prefix
         )
 
         return states
