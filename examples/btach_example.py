@@ -4,10 +4,10 @@ import json
 
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),'..'))
 from statemachine.batch import BatchFlow
-from statemachine.machine import Machine
+from statemachine import StateMachine
 from statemachine.states import PassState
 
-machine = Machine()
+machine = StateMachine()
 machine.addFlow(BatchFlow(
         Name='test',
         OnSucceed='finish',
