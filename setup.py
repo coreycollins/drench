@@ -1,19 +1,25 @@
-from setuptools import setup
 import sys
-install_requires = []
-python_ver = sys.version_info
-if python_ver.major == 2 and python_ver.minor < 7:
-    install_requires = ['ordereddict']
+from setuptools import setup, find_packages
+from setuptools.command.test import test as TestCommand
 
-setup(name='py-dag',
-      version='3.0.0',
-      description='Directed acyclic graph implementation',
-      url='https://github.com/thieman/py-dag',
-      author='Travis Thieman',
-      author_email='travis.thieman@gmail.com',
-      license='MIT',
-      packages=['dag'],
-      install_requires=install_requires,
-      test_suite='nose.collector',
-      tests_require=['nose'] + install_requires,
-      zip_safe=False)
+class PyTest(TestCommand):
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = ['tests']
+        self.test_suite = True
+
+    def run_tests(self):
+        import pytest
+        errno = pytest.main(self.test_args)
+        sys.exit(errno)
+
+setup(name='aws_step_gen',
+      version='1.0',
+      description='Generate state machines for AWS Step Fucntions',
+      author='Corey Collins',
+      author_email='ccollins@cmsdm.com',
+      packages=['statemachine'],
+      tests_require=['pytest'],
+      cmdclass={'test': PyTest},
+      install_requires=[]
+)
