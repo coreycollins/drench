@@ -19,9 +19,7 @@ class StateMachine(object):
             self.StartAt = Flow.start()
 
     def addState(self, Name, State, Start=False):
-        dic = {}
-        dic[Name] = State
-        self.States.update(dic)
+        self.States.update({Name:State})
         if (Start):
             self.StartAt = Name
 
