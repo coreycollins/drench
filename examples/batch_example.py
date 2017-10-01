@@ -19,7 +19,7 @@ flow = BatchFlow(
 
 machine = StateMachine()
 machine.addFlow(flow, Start=True)
-machine.addState(Name='finish', State=PassState())
-machine.addState(Name='failed', State=PassState())
+machine.addState(Name='finish', State=PassState(End=True))
+machine.addState(Name='failed', State=PassState(End=True))
 
 print(machine.toJson())

@@ -1,6 +1,10 @@
 """Common states"""
 import json
 
+class StateException(BaseException):
+    def __int__(self, **kwargs):
+        super(StateException,__init__(self, **kwargs))
+
 class State(object):
     """Base class for a state in the state machine."""
 
