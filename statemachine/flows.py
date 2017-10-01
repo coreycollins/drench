@@ -11,6 +11,9 @@ class Flow(object):
     def prefix(self):
         return '%s.%s' % (self.__class__.__name__, self.Name)
 
+    def start(self):
+        pass
+
 
 class BatchFlow(Flow):
     """docstring for ."""
