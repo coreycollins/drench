@@ -1,23 +1,24 @@
 from __future__ import print_function
 import sys, os
-import json
 
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),'..'))
-from statemachine.batch import BatchFlow
+from statemachine.flows import BatchFlow
 from statemachine import StateMachine
 from statemachine.states import PassState
 
+flow = BatchFlow(
+    Name='test',
+    OnSucceed='finish',
+    OnFail='failed',
+    JobQueue='test-queue',
+    JobDefinition='test',
+    Parameters={
+        'job': 'test'
+    }
+)
+
 machine = StateMachine()
-machine.addFlow(BatchFlow(
-        Name='test',
-        OnSucceed='finish',
-        OnFail='failed',
-        JobQueue='test-queue',
-        JobDefinition='test',
-        Parameters={
-            'job': 'test'
-        }
-))
+machine.addFlow(flow, Start=True)
 machine.addState(Name='finish', State=PassState())
 machine.addState(Name='failed', State=PassState())
 

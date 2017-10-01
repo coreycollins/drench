@@ -3,19 +3,30 @@ import json
 class StateMachine(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self):
-        self.machine = {}
+    def __init__(self, Comment=None, TimeoutSeconds=None, Version=None):
+        self.States = {}
 
-    def addFlow(self, flow):
-        self.machine.update(flow.states())
+        self.Comment = Comment
+        self.TimeoutSeconds = TimeoutSeconds
+        self.Version = Version
 
-    def addState(self, Name, State):
+        # Don't implicitly start anywhere
+        self.StartAt = None
+
+    def addFlow(self, Flow, Start=False):
+        self.States.update(Flow.states())
+        if (Start):
+            self.StartAt = Flow.start()
+
+    def addState(self, Name, State, Start=False):
         dic = {}
         dic[Name] = State
-        self.machine.update(dic)
+        self.States.update(dic)
+        if (Start):
+            self.StartAt = Name
 
     def toJson(self):
         def encodeState(obj):
             return dict((k, v) for k, v in obj.__dict__.iteritems() if v)
 
-        return json.dumps(self.machine, default=encodeState, indent=4, sort_keys=True)
+        return json.dumps(self, default=encodeState, indent=4, sort_keys=True)
