@@ -11,9 +11,9 @@ flow = BatchFlow(
     OnSucceed='finish',
     OnFail='failed',
     JobQueue='test-queue',
-    JobDefinition='test',
+    JobDefinition='sap-job-execution',
     Parameters={
-        'job': 'test'
+        'job': 'TEST_Boolean'
     }
 )
 

@@ -48,6 +48,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.2.run' % self.prefix()] = TaskState(
+            InputPath='$.%s' % self.prefix(),
             Resource=resources.get('aws_lambda_run_batch'),
             Next='%s.3.wait' % self.prefix()
         )
