@@ -51,7 +51,7 @@ class BatchFlow(Flow):
             InputPath='$.%s' % self.prefix(),
             Resource=resources.get('aws_lambda_run_batch'),
             Next='%s.3.wait' % self.prefix(),
-            ResultPath='$'
+            ResultPath='$.jobId'
         )
 
         states['%s.3.wait' % self.prefix()] = WaitState(
@@ -62,18 +62,18 @@ class BatchFlow(Flow):
         states['%s.4.check' % self.prefix()] = TaskState(
             Resource=resources.get('aws_lambda_check_batch'),
             Next='%s.5.choice' % self.prefix(),
-            ResultPath="$.%s.status" % self.prefix()
+            ResultPath="$.status"
         )
 
         states['%s.5.choice' % self.prefix()] = ChoiceState(
             Choices=[
                 {
-                    "Variable": "$.%s.status" % self.prefix(),
+                    "Variable": "$.status",
                     "StringEquals": "FAILED",
                     "Next": self.OnFail
                 },
                 {
-                  "Variable": "$.%s.status" % self.prefix(),
+                  "Variable": "$.status",
                   "StringEquals": "SUCCEEDED",
                   "Next": self.OnSucceed
                 }
