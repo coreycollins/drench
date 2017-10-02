@@ -13,7 +13,7 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
-setup(name='aws_step_gen',
+setup(name='statemachine',
       version='1.0',
       description='Generate state machines for AWS Step Fucntions',
       author='Corey Collins',
