@@ -15,6 +15,17 @@ class State(object):
         self.InputPath = InputPath
         self.OutputPath = OutputPath
 
+class SucceedState(object):
+    """ Succeed state in the state machine."""
+    def __init__(self):
+        self.Type = "Succeed"
+
+class FailState(State):
+    """ Succeed state in the state machine."""
+    def __init__(self, Cause=None, Error=None):
+        self.Type = "Fail"
+        self.Cause = Cause
+        self.Error = Error
 
 class PassState(State):
     """ Pass state in the state machine."""

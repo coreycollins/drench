@@ -25,7 +25,7 @@ class BatchFlow(Flow):
         self.ContainerOverrides = ContainerOverrides
 
     def start(self):
-        return '%s.1.setup' % self.prefix()
+        return ('%s.1.setup' % self.prefix())
 
     def states(self):
         resources = Resources()
@@ -36,6 +36,7 @@ class BatchFlow(Flow):
         }
         if (self.Parameters):
             setup['parameters'] = self.Parameters
+
         if (self.ContainerOverrides):
             setup['containerOverrides'] = self.ContainerOverrides
 
@@ -43,15 +44,14 @@ class BatchFlow(Flow):
 
         states[self.start()] = PassState(
             Result=setup,
-            ResultPath='$.%s' % self.prefix(),
+            ResultPath='$.batch',
             Next='%s.2.run' % self.prefix()
         )
 
         states['%s.2.run' % self.prefix()] = TaskState(
-            InputPath='$.%s' % self.prefix(),
             Resource=resources.get('aws_lambda_run_batch'),
             Next='%s.3.wait' % self.prefix(),
-            ResultPath='$.jobId'
+            ResultPath='$.batch.jobId'
         )
 
         states['%s.3.wait' % self.prefix()] = WaitState(
@@ -62,18 +62,18 @@ class BatchFlow(Flow):
         states['%s.4.check' % self.prefix()] = TaskState(
             Resource=resources.get('aws_lambda_check_batch'),
             Next='%s.5.choice' % self.prefix(),
-            ResultPath="$.status"
+            ResultPath="$.batch.status"
         )
 
         states['%s.5.choice' % self.prefix()] = ChoiceState(
             Choices=[
                 {
-                    "Variable": "$.status",
+                    "Variable": "$.batch.status",
                     "StringEquals": "FAILED",
                     "Next": self.OnFail
                 },
                 {
-                  "Variable": "$.status",
+                  "Variable": "$.batch.status",
                   "StringEquals": "SUCCEEDED",
                   "Next": self.OnSucceed
                 }
