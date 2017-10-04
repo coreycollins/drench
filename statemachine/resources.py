@@ -14,12 +14,16 @@ class Resources(object):
 
     def __init__(self):
         self.configurations = None
-        self.env = os.getenv("STEP_ENV") or "development"
+        self.env = os.getenv("STATE_ENV") or "development"
 
     def get(self, name):
-        if (self.configurations is None):
-            self.configurations = self.__get_configutation()
-        return self.configurations[name]['value']
+        if (self.env != 'development'):
+            client = boto3.client('lambda', region_name='us-east-1')
+            lambda_name = '%s-%s' % (env,name)
+            response = client.get_function_configuration(FunctionName=lambda_name)
+            return response['FunctionArn']
+        else:
+            return os.path.join(os.getcwd(),'lambda', name+'.py')
 
     def __get_configutation(self):
         """get configurations from s3 path"""

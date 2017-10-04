@@ -49,7 +49,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.2.run' % self.prefix()] = TaskState(
-            Resource=resources.get('aws_lambda_run_batch'),
+            Resource=resources.get('run_batch'),
             Next='%s.3.wait' % self.prefix(),
             ResultPath='$.batch.jobId'
         )
@@ -60,7 +60,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.4.check' % self.prefix()] = TaskState(
-            Resource=resources.get('aws_lambda_check_batch'),
+            Resource=resources.get('check_batch'),
             Next='%s.5.choice' % self.prefix(),
             ResultPath="$.batch.status"
         )
