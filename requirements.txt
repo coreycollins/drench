@@ -1,0 +1,4 @@
+boto3
+python-lambda-local
+jsonpath_ng
+requests

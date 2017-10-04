@@ -20,6 +20,7 @@ setup(name='statemachine',
       author_email='ccollins@cmsdm.com',
       packages=['statemachine'],
       tests_require=['pytest'],
+      scripts=['scripts/statetest'],
       cmdclass={'test': PyTest},
       install_requires=[]
 )

@@ -1,5 +1,5 @@
-from .states import TaskState, State, WaitState, PassState, ChoiceState
-from .resources import Resources
+from states import TaskState, State, WaitState, PassState, ChoiceState
+import utils
 
 class Flow(object):
     """docstring for Flow."""
@@ -28,8 +28,6 @@ class BatchFlow(Flow):
         return ('%s.1.setup' % self.prefix())
 
     def states(self):
-        resources = Resources()
-
         setup = {
             'jobQueue':self.JobQueue,
             'jobDefinition': self.JobDefinition
@@ -49,7 +47,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.2.run' % self.prefix()] = TaskState(
-            Resource=resources.get('aws_lambda_run_batch'),
+            Resource=utils.get_resource('run_batch'),
             Next='%s.3.wait' % self.prefix(),
             ResultPath='$.batch.jobId'
         )
@@ -60,7 +58,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.4.check' % self.prefix()] = TaskState(
-            Resource=resources.get('aws_lambda_check_batch'),
+            Resource=utils.get_resource('check_batch'),
             Next='%s.5.choice' % self.prefix(),
             ResultPath="$.batch.status"
         )

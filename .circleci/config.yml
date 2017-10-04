@@ -1,0 +1,38 @@
+version: 2.0
+
+jobs:
+  test:
+    docker:
+      - image: compassventures/buildpacks
+    working_directory: /root/project
+    steps:
+      - checkout
+  stage:
+    docker:
+      - image: compassventures/buildpacks
+    working_directory: /root/project
+    steps:
+      - checkout
+      - run:
+          name: Deploy Lambdas
+          environment:
+            STATE_ENV: staging
+          command: |
+            $CIRCLE_WORKING_DIRECTORY/scripts/deploy_lambda
+workflows:
+  version: 2
+  build:
+    jobs:
+      - test:
+          filters:
+            branches:
+              ignore:
+                - master
+  stage:
+    jobs:
+      - stage:
+          filters:
+            tags:
+              only: /^rc-.*/
+            branches:
+              ignore: /.*/
