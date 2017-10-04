@@ -23,7 +23,7 @@ class Resources(object):
 
     def __get_configutation(self):
         """get configurations from s3 path"""
-        client = boto3.client('s3')
+        client = boto3.client('s3', region_name='us-east-1')
         config_s3_object = client.get_object(Bucket='infra.compass.com',
                                              Key='%s/output.json' % self.env)
         config_object = json.loads(config_s3_object['Body'].read())
