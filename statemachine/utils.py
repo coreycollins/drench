@@ -1,7 +1,6 @@
 import os, sys
 import boto3
-import json
-
+import pkg_resources
 
 def get_resource(name):
     env = os.getenv("STATE_ENV") or "development"
@@ -11,4 +10,7 @@ def get_resource(name):
         response = client.get_function_configuration(FunctionName=lambda_name)
         return response['FunctionArn']
     else:
-        return os.path.join(os.path.dirname(os.path.realpath(__file__)),'../lambda', name+'.py')
+        filename = name + '.py'
+        resource_package = 'statemachine'  # Could be any module/package name
+        resource_path = '/'.join(('../lambda', filename))  # Do not use os.path.join(), see below
+        return pkg_resources.resource_filename(resource_package, resource_path)
