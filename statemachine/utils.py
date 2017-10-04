@@ -11,6 +11,6 @@ def get_resource(name):
         return response['FunctionArn']
     else:
         filename = name + '.py'
-        resource_package = 'statemachine'  # Could be any module/package name
-        resource_path = '/'.join(('../lambda', filename))  # Do not use os.path.join(), see below
+        resource_package = 'statemachine-lambda'  # Could be any module/package name
+        resource_path = '/'.join(filename)  # Do not use os.path.join(), see below
         return pkg_resources.resource_filename(resource_package, resource_path)
