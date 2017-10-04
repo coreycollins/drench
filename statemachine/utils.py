@@ -11,4 +11,4 @@ def get_resource(name):
         response = client.get_function_configuration(FunctionName=lambda_name)
         return response['FunctionArn']
     else:
-        return os.path.join(os.getcwd(),'lambda', name+'.py')
+        return os.path.join(os.path.dirname(os.path.realpath(__file__)),'../lambda', name+'.py')
