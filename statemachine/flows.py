@@ -29,6 +29,7 @@ class BatchFlow(Flow):
 
     def states(self):
         setup = {
+            'jobName': self.prefix(),
             'jobQueue':self.JobQueue,
             'jobDefinition': self.JobDefinition
         }
