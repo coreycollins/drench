@@ -1,18 +1,24 @@
 from states import TaskState, State, WaitState, PassState, ChoiceState
-import utils
 
 class Flow(object):
     """docstring for Flow."""
-    def __init__(self, Name, OnSucceed, OnFail):
+    def __init__(self, Name, OnSucceed, OnFail, Resources=None):
         self.Name = Name
         self.OnSucceed = OnSucceed
         self.OnFail = OnFail
+        self.Resources = Resources
 
     def prefix(self):
         return '%s.%s' % (self.__class__.__name__, self.Name)
 
     def start(self):
         pass
+
+    def get_resource(self, name):
+        if (self.Resources):
+            return self.Resources[name]
+        else:
+            raise BaseException("No resources were applied to this flow.")
 
 
 class BatchFlow(Flow):
@@ -48,7 +54,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.2.run' % self.prefix()] = TaskState(
-            Resource=utils.get_resource('run_batch'),
+            Resource=self.get_resource('run_batch'),
             Next='%s.3.wait' % self.prefix(),
             ResultPath='$.batch.jobId'
         )
@@ -59,7 +65,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.4.check' % self.prefix()] = TaskState(
-            Resource=utils.get_resource('check_batch'),
+            Resource=self.get_resource('check_batch'),
             Next='%s.5.choice' % self.prefix(),
             ResultPath="$.batch.status"
         )
