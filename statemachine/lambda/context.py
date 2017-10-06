@@ -10,7 +10,7 @@ class BotoContext():
         if(self.mock):
             if (self.service == 'batch'):
                 client = MockBatch()
-            if (self.service == 'sns'):
+            elif (self.service == 'sns'):
                 client = MockSNS()
             else:
                 raise BaseException("Service is not implemented locally.")
