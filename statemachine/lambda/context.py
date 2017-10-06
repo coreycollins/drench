@@ -10,6 +10,8 @@ class BotoContext():
         if(self.mock):
             if (self.service == 'batch'):
                 client = MockBatch()
+            if (self.service == 'sns'):
+                client = MockSNS()
             else:
                 raise BaseException("Service is not implemented locally.")
         else:
@@ -19,6 +21,10 @@ class BotoContext():
     def __exit__(self, *args):
         pass
 
+class MockSNS(object):
+
+    def publish(self, **kwargs):
+        print("Sent SNS Message: {}".format(kwargs))
 
 class MockBatch(object):
 

@@ -14,12 +14,43 @@ class Flow(object):
     def start(self):
         pass
 
+    def states(self):
+        pass
+
     def get_resource(self, name):
         if (self.Resources):
             return self.Resources[name]
         else:
             raise BaseException("No resources were applied to this flow.")
 
+class SNSFlow(Flow):
+    """docstring for ."""
+    def __init__(self, TopicArn, Subject, Message, **kwargs):
+        super(SNSFlow, self).__init__(**kwargs)
+        self.TopicArn = TopicArn
+        self.Subject = Subject
+        self.Message = Message
+
+    def start(self):
+        return ('%s.1.setup' % self.prefix())
+
+    def states(self):
+        states = {}
+        states[self.start()] = PassState(
+            Result={
+                'arn': self.TopicArn,
+                'subject': self.Subject,
+                'message': self.Message
+            },
+            ResultPath='$.sns'
+        )
+
+        states['%s.2.send' % self.prefix()] = State=TaskState(
+            Resource=self.get_resource('send_sns'),
+            Next=self.OnSucceed
+        )
+
+        return states
 
 class BatchFlow(Flow):
     """docstring for ."""

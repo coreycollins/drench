@@ -3,7 +3,7 @@ import sys, os
 import pkg_resources
 
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),'..'))
-from statemachine.flows import BatchFlow
+from statemachine.flows import BatchFlow, SNSFlow
 from statemachine import StateMachine
 from statemachine.states import PassState, SucceedState, FailState
 
@@ -18,11 +18,12 @@ input_test = PassState(
 
 resources = {
     'run_batch' : pkg_resources.resource_filename('statemachine', 'lambda/run_batch.py'),
-    'check_batch' : pkg_resources.resource_filename('statemachine', 'lambda/check_batch.py')
+    'check_batch' : pkg_resources.resource_filename('statemachine', 'lambda/check_batch.py'),
+    'send_sns' : pkg_resources.resource_filename('statemachine', 'lambda/send_sns.py')
 }
-flow = BatchFlow(
+batch_flow = BatchFlow(
     Name='test',
-    OnSucceed='finish',
+    OnSucceed='SuccessSend',
     OnFail='failed',
     Resources=resources,
     JobQueue='test-queue',
@@ -31,12 +32,23 @@ flow = BatchFlow(
         'job': '$.params.job'
     }
 )
-input_test.Next = flow.start()
+input_test.Next = batch_flow.start()
+
+sns_flow = SNSFlow(
+    Name='SuccessSend',
+    OnSucceed='finish',
+    OnFail='failed',
+    Resources=resources,
+    TopicArn='sns:example:topic',
+    Subject='Job succeeded.'
+    Message='Job succeeded.'
+)
 
 machine = StateMachine()
 
 machine.addState(Name='in', State=input_test, Start=True)
-machine.addFlow(flow)
+machine.addFlow(batch_flow)
+machine.addFlow(sns_flow)
 machine.addState(Name='finish', State=SucceedState())
 machine.addState(Name='failed', State=FailState())
 
