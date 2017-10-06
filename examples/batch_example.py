@@ -7,48 +7,51 @@ from statemachine.flows import BatchFlow, SNSFlow
 from statemachine import StateMachine
 from statemachine.states import PassState, SucceedState, FailState
 
-input_test = PassState(
-    Result={
-        'params':{
-            'job':'TEST_Boolean'
-        }
-    },
-    ResultPath='$'
-)
-
 resources = {
     'run_batch' : pkg_resources.resource_filename('statemachine', 'lambda/run_batch.py'),
     'check_batch' : pkg_resources.resource_filename('statemachine', 'lambda/check_batch.py'),
     'send_sns' : pkg_resources.resource_filename('statemachine', 'lambda/send_sns.py')
 }
-batch_flow = BatchFlow(
-    Name='test',
-    OnSucceed='SuccessSend',
-    OnFail='failed',
-    Resources=resources,
-    JobQueue='test-queue',
-    JobDefinition='sap-job-execution',
-    Parameters={
-        'job': '$.params.job'
-    }
-)
-input_test.Next = batch_flow.start()
-
-sns_flow = SNSFlow(
-    Name='SuccessSend',
-    OnSucceed='finish',
-    OnFail='failed',
-    Resources=resources,
-    TopicArn='sns:example:topic',
-    Subject='Job succeeded.'
-    Message='Job succeeded.'
-)
 
 machine = StateMachine()
 
-machine.addState(Name='in', State=input_test, Start=True)
-machine.addFlow(batch_flow)
-machine.addFlow(sns_flow)
+machine.addState(
+    Name='in',
+    State=PassState(
+        Next='test',
+        Result={
+            'params':{
+                'job':'TEST_Boolean'
+            }
+        },
+        ResultPath='$'
+    ),
+    Start=True
+)
+machine.addFlow(
+    BatchFlow(
+        Name='test',
+        OnSucceed='SuccessSend',
+        OnFail='failed',
+        Resources=resources,
+        JobQueue='test-queue',
+        JobDefinition='sap-job-execution',
+        Parameters={
+            'job': '$.params.job'
+        }
+    )
+)
+machine.addFlow(
+    SNSFlow(
+        Name='SuccessSend',
+        OnSucceed='finish',
+        OnFail='failed',
+        Resources=resources,
+        TopicArn='sns:example:topic',
+        Subject='Job succeeded.',
+        Message='Job succeeded.'
+    )
+)
 machine.addState(Name='finish', State=SucceedState())
 machine.addState(Name='failed', State=FailState())
 

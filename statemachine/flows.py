@@ -8,12 +8,6 @@ class Flow(object):
         self.OnFail = OnFail
         self.Resources = Resources
 
-    def prefix(self):
-        return '%s.%s' % (self.__class__.__name__, self.Name)
-
-    def start(self):
-        pass
-
     def states(self):
         pass
 
@@ -31,12 +25,9 @@ class SNSFlow(Flow):
         self.Subject = Subject
         self.Message = Message
 
-    def start(self):
-        return ('%s.1.setup' % self.prefix())
-
     def states(self):
         states = {}
-        states[self.start()] = PassState(
+        states[self.Name] = PassState(
             Result={
                 'arn': self.TopicArn,
                 'subject': self.Subject,
@@ -45,7 +36,7 @@ class SNSFlow(Flow):
             ResultPath='$.sns'
         )
 
-        states['%s.2.send' % self.prefix()] = State=TaskState(
+        states['%s.2.send' % self.Name] = State=TaskState(
             Resource=self.get_resource('send_sns'),
             Next=self.OnSucceed
         )
@@ -61,12 +52,9 @@ class BatchFlow(Flow):
         self.Parameters = Parameters
         self.ContainerOverrides = ContainerOverrides
 
-    def start(self):
-        return ('%s.1.setup' % self.prefix())
-
     def states(self):
         setup = {
-            'jobName': self.prefix(),
+            'jobName': self.Name,
             'jobQueue':self.JobQueue,
             'jobDefinition': self.JobDefinition
         }
@@ -78,30 +66,30 @@ class BatchFlow(Flow):
 
         states = {}
 
-        states[self.start()] = PassState(
+        states[self.Name] = PassState(
             Result=setup,
             ResultPath='$.batch',
-            Next='%s.2.run' % self.prefix()
+            Next='%s.2.run' % self.Name
         )
 
-        states['%s.2.run' % self.prefix()] = TaskState(
+        states['%s.2.run' % self.Name] = TaskState(
             Resource=self.get_resource('run_batch'),
-            Next='%s.3.wait' % self.prefix(),
+            Next='%s.3.wait' % self.Name,
             ResultPath='$.batch.jobId'
         )
 
-        states['%s.3.wait' % self.prefix()] = WaitState(
+        states['%s.3.wait' % self.Name] = WaitState(
             Seconds=30,
-            Next='%s.4.check' % self.prefix()
+            Next='%s.4.check' % self.Name
         )
 
-        states['%s.4.check' % self.prefix()] = TaskState(
+        states['%s.4.check' % self.Name] = TaskState(
             Resource=self.get_resource('check_batch'),
-            Next='%s.5.choice' % self.prefix(),
+            Next='%s.5.choice' % self.Name,
             ResultPath="$.batch.status"
         )
 
-        states['%s.5.choice' % self.prefix()] = ChoiceState(
+        states['%s.5.choice' % self.Name] = ChoiceState(
             Choices=[
                 {
                     "Variable": "$.batch.status",
@@ -114,7 +102,7 @@ class BatchFlow(Flow):
                   "Next": self.OnSucceed
                 }
             ],
-            Default='%s.3.wait' % self.prefix()
+            Default='%s.3.wait' % self.Name
         )
 
         return states
