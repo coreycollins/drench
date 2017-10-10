@@ -5,7 +5,7 @@ then
   echo "Deployed nothing in development"
 else
   mkdir -p $CWD/build
-  pip install -r requirements.txt -t $CWD/build
+  pip install -r $CWD/requirements.txt -t $CWD/build
   cp $CWD/statemachine/lambda/* $CWD/build
   cd $CWD/build && zip lambda_functions.zip * -x **\*.pyc -x pip*/**\* -x pkg_resources*/**\* -x boto*/**\* -x setuptools*/**\* -x wheel*/**\*
   aws lambda update-function-code --function-name "$STATE_ENV-run_batch" --zip-file fileb://$CWD/build/lambda_functions.zip
