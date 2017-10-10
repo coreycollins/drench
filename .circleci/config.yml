@@ -1,25 +1,42 @@
 version: 2.0
 
+defaults: &defaults
+  working_directory: /root/project
+  docker:
+    - image: compassventures/buildpacks
+
+deploysteps: &deploysteps
+  steps:
+    - checkout
+    - deploy:
+        name: Deploy
+        command: |
+          $CIRCLE_WORKING_DIRECTORY/scripts/deploy_lambda
+
 jobs:
   test:
-    docker:
-      - image: compassventures/buildpacks
-    working_directory: /root/project
+    <<: *defaults
     steps:
       - checkout
-  stage:
-    docker:
-      - image: compassventures/buildpacks
-    working_directory: /root/project
-    steps:
-      - checkout
-      - run:
-          name: Deploy Lambdas
-          environment:
-            STATE_ENV: staging
-            AWS_DEFAULT_REGION: us-east-1
-          command: |
-            $CIRCLE_WORKING_DIRECTORY/scripts/deploy_lambda
+  deploy-dev:
+    <<: *defaults
+    environment:
+      STATE_ENV: development
+      AWS_DEFAULT_REGION: us-east-1
+    <<: *deploysteps
+  deploy-stage:
+    <<: *defaults
+    environment:
+      STATE_ENV: staging
+      AWS_DEFAULT_REGION: us-east-1
+    <<: *deploysteps
+  deploy-prod:
+    <<: *defaults
+    environment:
+      STATE_ENV: production
+      AWS_DEFAULT_REGION: us-east-1
+    <<: *deploysteps
+
 workflows:
   version: 2
   build:
@@ -29,9 +46,10 @@ workflows:
             branches:
               ignore:
                 - master
-  stage:
+                - develop
+  deploy-dev:
     jobs:
-      - stage:
+      - deploy-dev:
           filters:
             branches:
-              only: master
+              only: develop
