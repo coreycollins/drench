@@ -28,6 +28,7 @@ class SNSFlow(Flow):
     def states(self):
         states = {}
         states[self.Name] = PassState(
+            Next='%s.2.send' % self.Name,
             Result={
                 'arn': self.TopicArn,
                 'subject': self.Subject,
