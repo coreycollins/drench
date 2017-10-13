@@ -107,3 +107,62 @@ class BatchFlow(Flow):
         )
 
         return states
+
+class GlueFlow(Flow):
+    """docstring for ."""
+    def __init__(self, JobName, Arguments=None, AllocatedCapacity=1, **kwargs):
+        super(GlueFlow, self).__init__(**kwargs)
+        self.JobName = JobName
+        self.Arguments = Arguments
+        self.AllocatedCapacity = AllocatedCapacity
+
+    def states(self):
+        setup = {
+            'JobName': self.JobName,
+            'AllocatedCapacity': self.AllocatedCapacity
+        }
+        if (self.Arguments):
+            setup['Arguments'] = self.Arguments
+
+        states = {}
+
+        states[self.Name] = PassState(
+            Result=setup,
+            ResultPath='$.glue',
+            Next='%s.2.run' % self.Name
+        )
+
+        states['%s.2.run' % self.Name] = TaskState(
+            Resource=self.get_resource('run_glue'),
+            Next='%s.3.wait' % self.Name,
+            ResultPath='$.glue.runId'
+        )
+
+        states['%s.3.wait' % self.Name] = WaitState(
+            Seconds=30,
+            Next='%s.4.check' % self.Name
+        )
+
+        states['%s.4.check' % self.Name] = TaskState(
+            Resource=self.get_resource('check_glue'),
+            Next='%s.5.choice' % self.Name,
+            ResultPath="$.glue.status"
+        )
+
+        states['%s.5.choice' % self.Name] = ChoiceState(
+            Choices=[
+                {
+                    "Variable": "$.glue.status",
+                    "StringEquals": "FAILED",
+                    "Next": self.OnFail
+                },
+                {
+                  "Variable": "$.glue.status",
+                  "StringEquals": "SUCCEEDED",
+                  "Next": self.OnSucceed
+                }
+            ],
+            Default='%s.3.wait' % self.Name
+        )
+
+        return states
