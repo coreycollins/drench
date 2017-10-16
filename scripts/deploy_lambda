@@ -11,4 +11,6 @@ else
   aws lambda update-function-code --function-name "$STATE_ENV-run_batch" --zip-file fileb://$CWD/build/lambda_functions.zip
   aws lambda update-function-code --function-name "$STATE_ENV-check_batch" --zip-file fileb://$CWD/build/lambda_functions.zip
   aws lambda update-function-code --function-name "$STATE_ENV-send_sns" --zip-file fileb://$CWD/build/lambda_functions.zip
+  aws lambda update-function-code --function-name "$STATE_ENV-run_glue" --zip-file fileb://$CWD/build/lambda_functions.zip
+  aws lambda update-function-code --function-name "$STATE_ENV-check_glue" --zip-file fileb://$CWD/build/lambda_functions.zip
 fi
