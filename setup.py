@@ -21,7 +21,7 @@ setup(name='statemachine',
       packages=['statemachine'],
       package_data={'statemachine': ['lambda/*.py']},
       tests_require=['pytest'],
-      scripts=['scripts/statetest'],
+      scripts=['scripts/statetest.py'],
       cmdclass={'test': PyTest},
       install_requires=[]
 )
