@@ -23,5 +23,10 @@ setup(name='statemachine',
       tests_require=['pytest'],
       scripts=['scripts/statetest'],
       cmdclass={'test': PyTest},
-      install_requires=[]
+      install_requires=[
+          'boto3',
+          'python-lambda-local',
+          'jsonpath_ng',
+          'requests'
+          ]
 )
