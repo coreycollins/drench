@@ -8,12 +8,12 @@ defaults: &defaults
 deploysteps: &deploysteps
   steps:
     - checkout
-    - build:
-        name:
+    - run:
+        name: build
         command: |
           $CIRCLE_WORKING_DIRECTORY/scripts/deploy_lambda
     - deploy:
-        name:
+        name: deploy
         command: |
           terraform init $CIRCLE_WORKING_DIRECTORY/terraform
           terraform workspace new $STATE_ENV $CIRCLE_WORKING_DIRECTORY/terraform
