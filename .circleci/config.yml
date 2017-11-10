@@ -15,10 +15,9 @@ deploysteps: &deploysteps
     - deploy:
         name: deploy
         command: |
-          cd $CIRCLE_WORKING_DIRECTORY
           terraform init $CIRCLE_WORKING_DIRECTORY/terraform
           terraform workspace select $STATE_ENV $CIRCLE_WORKING_DIRECTORY/terraform
-          terraform apply $CIRCLE_WORKING_DIRECTORY/terraform
+          terraform plan -var 'aws_access_key=$AWS_ACCESS_KEY_ID' -var 'aws_secret_key=$AWS_SECRET_ACCESS_KEY' -var 'aws_region=$AWS_DEFAULT_REGION' $CIRCLE_WORKING_DIRECTORY/terraform
 
 jobs:
   test:
@@ -30,9 +29,6 @@ jobs:
     environment:
       STATE_ENV: development
       AWS_DEFAULT_REGION: us-east-1
-      TF_VAR_aws_acces_key: $AWS_ACCESS_KEY_ID
-      TF_VAR_aws_secret_key: $AWS_SECRET_ACCESS_KEY
-      TF_VAR_aws_region: $AWS_DEFAULT_REGION
     <<: *deploysteps
   deploy-stage:
     <<: *defaults
