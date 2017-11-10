@@ -7,6 +7,7 @@ terraform {
     bucket = "infra.compass.com"
     region = "us-east-1"
     key    = "statemachine/state"
+    workspace_key_prefix = "compass"
   }
 }
 

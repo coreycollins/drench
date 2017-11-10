@@ -19,3 +19,4 @@ build/
 # Terraform
 secret.tfvars
 .terraform
+terraform.tfstate.d/
