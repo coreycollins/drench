@@ -11,7 +11,7 @@ deploysteps: &deploysteps
     - run:
         name: build
         command: |
-          $CIRCLE_WORKING_DIRECTORY/scripts/deploy_lambda
+          $CIRCLE_WORKING_DIRECTORY/scripts/build_libs
     - deploy:
         name: deploy
         command: |

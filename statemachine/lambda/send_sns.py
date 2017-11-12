@@ -15,8 +15,6 @@ def handler(event, context):
         else:
             raise BaseException("No sns message sent")
 
-        process_id = event['process_id']
-
         client.publish(
             TopicArn=sns['arn'],
             Message=sns['message'],
