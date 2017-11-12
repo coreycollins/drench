@@ -15,3 +15,8 @@ venv/
 
 # Build directory
 build/
+
+# Terraform
+secret.tfvars
+.terraform
+terraform.tfstate.d/
