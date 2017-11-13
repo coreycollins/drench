@@ -41,8 +41,8 @@ class MockBatch(object):
         job = result["jobDefinitions"][0]
 
         volumes = []
-        parameters = 'parameters' in kwargs or {}
-        overrides  = 'containerOverrides' in kwargs or []
+        parameters = kwargs['parameters'] if 'parameters' in kwargs else {}
+        overrides  = kwargs['containerOverrides'] if 'containerOverrides' in kwargs else []
 
         try:
             for vol in job['containerProperties']['volumes']:
@@ -113,7 +113,7 @@ class MockBatch(object):
                             "%s" % vol['host']['sourcePath']
                         ]
                     )
-        except:
+        except Exception as err:
             # Teardown Containers
             subprocess.call([
                     'docker',
@@ -121,7 +121,7 @@ class MockBatch(object):
                     'batch_job'
                 ] + volumes
             )
-            raise BaseException("Failed to run batch job")
+            raise err
         else:
             # Teardown Containers
             subprocess.check_call([
