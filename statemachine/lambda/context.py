@@ -1,9 +1,5 @@
 import boto3
 import subprocess
-import sys, os
-import urlparse
-import string
-import uuid
 
 class BotoContext():
     def __init__(self, service, local=False):
@@ -16,8 +12,6 @@ class BotoContext():
                 client = MockBatch()
             elif (self.service == 'sns'):
                 client = MockSNS()
-            elif (self.service == 'glue'):
-                client = MockGlue()
             else:
                 raise BaseException("Service is not implemented locally.")
         else:
@@ -31,34 +25,6 @@ class MockSNS(object):
 
     def publish(self, **kwargs):
         print("Sent SNS Message: {}".format(kwargs))
-
-class MockGlue(object):
-
-    def get_job_run(self, **kwargs):
-        return {'JobRun':{'JobRunState':'SUCCEEDED'}}
-        
-    def start_job_run(self, **kwargs):
-        client = boto3.client('glue', region_name='us-east-1')
-
-        if ('Arguments' in kwargs and 'scriptLocation' in kwargs['Arguments']):
-            scriptLocation = kwargs['Arguments']['scriptLocation']
-        else:
-            res = client.get_job(JobName=kwargs['JobName'])
-            scriptLocation = res['Job']['Command']['ScriptLocation']
-
-        input_path = urlparse.urlparse(scriptLocation)
-
-        # If script is on S3, download it
-        if (input_path.scheme == 's3'):
-            s3 = boto3.client('s3', region_name='us-east-1')
-            bucket = input_path.netloc
-            key = string.lstrip(input_path.path,'/')
-            scriptLocation = '/tmp/%s.py' % uuid.uuid4().hex
-
-            s3.download_file(Bucket=bucket, Key=key, Filename=scriptLocation)
-
-
-        subprocess.check_call(['python', scriptLocation], env=os.environ)
 
 class MockBatch(object):
 
@@ -75,8 +41,8 @@ class MockBatch(object):
         job = result["jobDefinitions"][0]
 
         volumes = []
-        parameters = kwargs['parameters'] or {}
-        overrides  = kwargs['containerOverrides'] or []
+        parameters = 'parameters' in kwargs or {}
+        overrides  = 'containerOverrides' in kwargs or []
 
         try:
             for vol in job['containerProperties']['volumes']:
