@@ -3,5 +3,5 @@ CWD=$(pwd)
 
 mkdir -p $CWD/build
 pip install -r $CWD/requirements.txt -t $CWD/build
-cp $CWD/statemachine/lambda/* $CWD/build
+cp $CWD/lambda/* $CWD/build
 cd $CWD/build && zip lambda_functions.zip * -x **\*.pyc -x pip*/**\* -x pkg_resources*/**\* -x boto*/**\* -x setuptools*/**\* -x wheel*/**\*
