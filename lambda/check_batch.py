@@ -2,7 +2,6 @@ from __future__ import print_function
 import json
 import os
 import logging
-import jsonpath_ng
 import boto3
 
 logger = logging.getLogger()
