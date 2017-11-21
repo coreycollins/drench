@@ -17,4 +17,6 @@ def handler(event, context):
 
     process_id = event['process_id']
 
-    client.start_job_run(**glue)
+    response = client.start_job_run(**glue)
+
+    return response['JobRunId']

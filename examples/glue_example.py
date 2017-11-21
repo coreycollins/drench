@@ -8,9 +8,9 @@ from statemachine import StateMachine
 from statemachine.states import PassState, SucceedState, FailState
 
 resources = {
-    'run_glue' : pkg_resources.resource_filename('statemachine', 'lambda/run_glue.py'),
-    'check_glue' : pkg_resources.resource_filename('statemachine', 'lambda/check_glue.py'),
-    'send_sns' : pkg_resources.resource_filename('statemachine', 'lambda/send_sns.py')
+    'run_glue' : 'run_glue.py',
+    'check_glue' : 'check_glue.py',
+    'send_sns' : 'send_sns.py'
 }
 
 machine = StateMachine()
@@ -40,9 +40,9 @@ machine.addFlow(
         Resources=resources,
         JobName='dev-glue-job',
         Arguments={
-            'scriptLocation':'$.subs.deps.test_glue',
-            'remotepath':'$.subs.remotepath',
-            'files':'input.txt'
+            '--scriptLocation':'$.subs.deps.test_glue',
+            '--remotepath':'$.subs.remotepath',
+            '--files':'input.txt'
         }
     )
 )
