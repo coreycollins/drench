@@ -17,10 +17,10 @@ def handler(event, context):
 
     # Substitute parameters
     if ('Arguments' in glue):
-        for k,v in batch['Arguments'].iteritems():
+        for k,v in glue['Arguments'].iteritems():
             try:
                 expr = jsonpath_ng.parse(v)
-                batch['Arguments'][k] = expr.find(event)[0].value
+                glue['Arguments'][k] = expr.find(event)[0].value
             except:
                 pass
 
