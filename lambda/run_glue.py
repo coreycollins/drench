@@ -15,7 +15,15 @@ def handler(event, context):
     else:
         raise BaseException("No glue message sent")
 
-    process_id = event['process_id']
+    # Substitute parameters
+    if ('Arguments' in glue):
+        for k,v in batch['Arguments'].iteritems():
+            try:
+                expr = jsonpath_ng.parse(v)
+                batch['Arguments'][k] = expr.find(event)[0].value
+            except:
+                pass
+
 
     response = client.start_job_run(**glue)
 
