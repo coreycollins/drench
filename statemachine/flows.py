@@ -88,12 +88,12 @@ class BatchFlow(Flow):
             Resource=self.get_resource('check_batch'),
             Next='%s.5.choice' % self.Name,
             ResultPath="$.batch.status",
-            Retry=[
-                  "ErrorEquals": [ "Lambda.Unknown" ],
-                  "IntervalSeconds": 30,
-                  "MaxAttempts": 5,
-                  "BackoffRate": 1.5
-            ]
+            Retry=[{
+              "ErrorEquals": [ "Lambda.Unknown" ],
+              "IntervalSeconds": 30,
+              "MaxAttempts": 5,
+              "BackoffRate": 1.5
+            }]
         )
 
         states['%s.5.choice' % self.Name] = ChoiceState(
@@ -153,12 +153,12 @@ class GlueFlow(Flow):
             Resource=self.get_resource('check_glue'),
             Next='%s.5.choice' % self.Name,
             ResultPath="$.glue.status",
-            Retry=[
-                  "ErrorEquals": [ "Lambda.Unknown" ],
-                  "IntervalSeconds": 30,
-                  "MaxAttempts": 5,
-                  "BackoffRate": 1.5
-            ]
+            Retry=[{
+              "ErrorEquals": [ "Lambda.Unknown" ],
+              "IntervalSeconds": 30,
+              "MaxAttempts": 5,
+              "BackoffRate": 1.5
+            }]
         )
 
         states['%s.5.choice' % self.Name] = ChoiceState(
