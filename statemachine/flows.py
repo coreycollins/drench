@@ -80,7 +80,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.3.wait' % self.Name] = WaitState(
-            Seconds=30,
+            Seconds=200,
             Next='%s.4.check' % self.Name
         )
 
@@ -139,7 +139,7 @@ class GlueFlow(Flow):
         )
 
         states['%s.3.wait' % self.Name] = WaitState(
-            Seconds=30,
+            Seconds=200,
             Next='%s.4.check' % self.Name
         )
 
