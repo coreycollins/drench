@@ -87,7 +87,13 @@ class BatchFlow(Flow):
         states['%s.4.check' % self.Name] = TaskState(
             Resource=self.get_resource('check_batch'),
             Next='%s.5.choice' % self.Name,
-            ResultPath="$.batch.status"
+            ResultPath="$.batch.status",
+            Retry=[
+                  "ErrorEquals": [ "Lambda.Unknown" ],
+                  "IntervalSeconds": 30,
+                  "MaxAttempts": 5,
+                  "BackoffRate": 1.5
+            ]
         )
 
         states['%s.5.choice' % self.Name] = ChoiceState(
@@ -146,7 +152,13 @@ class GlueFlow(Flow):
         states['%s.4.check' % self.Name] = TaskState(
             Resource=self.get_resource('check_glue'),
             Next='%s.5.choice' % self.Name,
-            ResultPath="$.glue.status"
+            ResultPath="$.glue.status",
+            Retry=[
+                  "ErrorEquals": [ "Lambda.Unknown" ],
+                  "IntervalSeconds": 30,
+                  "MaxAttempts": 5,
+                  "BackoffRate": 1.5
+            ]
         )
 
         states['%s.5.choice' % self.Name] = ChoiceState(
