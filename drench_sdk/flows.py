@@ -1,5 +1,5 @@
 """flows are fucntion-like packages of states"""
-from drench_sdk.states import TaskState, WaitState, PassState, ChoiceState
+from states import TaskState, WaitState, PassState, ChoiceState
 
 class Flow(object):
     """docstring for Flow."""
@@ -8,6 +8,7 @@ class Flow(object):
         self.in_taxonomy = in_taxonomy
         self.out_taxonomy = out_taxonomy
         self.start = start
+        self.on_succeed = on_succeed
 
     def states(self):
         """return compenent state objects"""
@@ -15,10 +16,11 @@ class Flow(object):
 
     def get_resource(self, name):
         """return resource ARNs"""
-        if self.Resources:
-            return self.Resources[name]
-        else:
-            raise BaseException("No resources were applied to this flow.")
+        return f'arn-{name}'
+        #if self.Resources:
+        #    return self.Resources[name]
+        #else:
+        #    raise BaseException("No resources were applied to this flow.")
 
 class SNSFlow(Flow):
     """docstring for ."""
