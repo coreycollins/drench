@@ -1,5 +1,5 @@
 from workflow import WorkFlow
-from flows import BatchFlow, SNSFlow
+from flows import BatchFlow, GlueFlow
 from taxonomy import Taxonomy
 from resource import Resource
 
@@ -24,13 +24,12 @@ workflow.addFlow(
 )
 
 workflow.addFlow(
-    SNSFlow(
-        name='SuccessSend',
+    GlueFlow(
+        name='example-glue-job',
         in_taxonomy=Taxonomy(name=str),
         out_taxonomy=Taxonomy(name=str),
-        TopicArn=resource.get_arn('sns', 'example_topic'),
-        Subject='Job succeeded.',
-        Message='Job succeeded.',
+        Jobname='example-job-def',
+        AllocatedCapacity=2
     )
 )
 

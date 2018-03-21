@@ -4,18 +4,46 @@
 #pylint: disable=invalid-name
 
 import json
+from resource import Resource
+from flows import SNSFlow
 from states import SucceedState, FailState
 
-FINISH_STATE_NAME = 'finish'
-FAILED_STATE_NAME = 'failed'
+resource = Resource()
+
+FINISH_FLOW_NAME = 'SuccessSend'
+FINISH_END_NAME = 'finish'
+FINISH_SUBJ = 'Job succeeded'
+
+FAILED_FLOW_NAME = 'FailSend'
+FAILED_END_NAME = 'failed'
+FAILED_SUBJ = 'Job Failed'
 
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
     def __init__(self, Comment=None, TimeoutSeconds=None, Version=None):
         self.States = {
-            FINISH_STATE_NAME: SucceedState(),
-            FAILED_STATE_NAME: FailState()
+            FINISH_FLOW_NAME: SNSFlow(
+                name=FINISH_FLOW_NAME,
+                TopicArn=resource.get_arn("foo", "bar"),
+                Subject=FINISH_SUBJ,
+                Message=FINISH_SUBJ,
+                on_succeed=FINISH_END_NAME,
+                in_taxonomy=None,
+                out_taxonomy=None
+            ),
+            FINISH_END_NAME: SucceedState(),
+
+            FAILED_FLOW_NAME: SNSFlow(
+                name=FAILED_FLOW_NAME,
+                TopicArn=resource.get_arn("foo", "bar"),
+                Subject=FAILED_SUBJ,
+                Message=FAILED_SUBJ,
+                on_succeed=FAILED_END_NAME,
+                in_taxonomy=None,
+                out_taxonomy=None
+            ),
+            FAILED_END_NAME: FailState(),
         }
 
         self.Comment = Comment
@@ -29,9 +57,9 @@ class WorkFlow(object):
         """ adds flow's states to workflow, overwrites in the case of name colissions"""
 
         if not Flow.on_succeed:
-            Flow.on_succeed = FINISH_STATE_NAME
+            Flow.on_succeed = FINISH_FLOW_NAME
 
-        Flow.OnFail = FAILED_STATE_NAME
+        Flow.OnFail = FAILED_FLOW_NAME
 
         if Flow.start:
             self.StartAt = Flow.name

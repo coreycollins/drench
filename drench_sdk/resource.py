@@ -5,4 +5,4 @@ class Resource(object):
         pass
 
     def get_arn(self, one, two):
-        return f'arn-{one!r}-{two!r}'
+        return f'arn-{one}-{two}'
