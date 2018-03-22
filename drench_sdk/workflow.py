@@ -1,6 +1,5 @@
 """workflows are a wrapper for aws step fucntions"""
-
-# TODO: use pep8 for object names and write JSON spec?
+#violate pep8 so workflows can dump AWS-friendly JSON
 #pylint: disable=invalid-name
 
 import json
@@ -15,24 +14,39 @@ FAILED_FLOW_NAME = 'FailSend'
 FAILED_END_NAME = 'failed'
 FAILED_SUBJ = 'Job Failed'
 
+class TaxonomyMismatchError(BaseException):
+    """ error indicating non-matched taxonomies """
+    def __init__(self, **kwargs):
+        super(TaxonomyMismatchError, self).__init__(**kwargs)
+
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self, Comment=None, TimeoutSeconds=None, Version=None, topic_arn=None):
+    def __init__(self, comment=None, timeout=None, version=None, topic_arn=None):
 
-        self.Comment = Comment
-        self.TimeoutSeconds = TimeoutSeconds
-        self.Version = Version
         self.topic_arn = topic_arn
 
-        self.States = {
+        self.flows = {}
+
+        self.sfn = {}
+
+        if comment:
+            self.sfn['Comment'] = comment
+
+        if timeout:
+            self.sfn['TimeoutSeconds'] = timeout
+
+        if version:
+            self.sfn['Version'] = version
+
+        self.sfn['States'] = {
             FINISH_END_NAME: SucceedState(),
             FAILED_END_NAME: FailState(),
         }
 
         if topic_arn:
-            self.States = {
-                **self.States,
+            self.sfn['States'] = {
+                **self.sfn['States'],
                 **SNSFlow(
                     name=FINISH_FLOW_NAME,
                     TopicArn=topic_arn,
@@ -53,15 +67,9 @@ class WorkFlow(object):
                     ).states(),
             }
 
-        self.Comment = Comment
-        self.TimeoutSeconds = TimeoutSeconds
-        self.Version = Version
-
-        # Don't implicitly start anywhere
-        self.StartAt = None
-
     def addFlow(self, Flow):
         """ adds flow's states to workflow, overwrites in the case of name colissions"""
+        self.flows[Flow.name] = Flow
 
         if not Flow.on_succeed:
             Flow.on_succeed = FINISH_FLOW_NAME if self.topic_arn else FINISH_END_NAME
@@ -69,15 +77,23 @@ class WorkFlow(object):
         Flow.OnFail = FAILED_FLOW_NAME if self.topic_arn else FAILED_END_NAME
 
         if Flow.start:
-            self.StartAt = Flow.name
+            self.sfn['StartAt'] = Flow.name
 
-        # TODO: check for colision
-        self.States = {**self.States, **Flow.states()}
+        self.sfn['States'] = {**self.sfn['States'], **Flow.states()}
+
+    def check_taxonomies(self):
+        """make sure tanonomies match"""
+        for flow in self.flows.values():
+            if flow.on_succeed and flow.on_succeed not in [FINISH_FLOW_NAME, FINISH_END_NAME]:
+                if flow.out_taxonomy != self.flows[flow.on_succeed].in_taxonomy:
+                    raise TaxonomyMismatchError()
 
     def toJson(self):
         """dump Workflow to AWS Step Function JSON"""
         def encodeState(obj):
-            """lambda object into dicts"""
+            """coerce object into dicts"""
             return dict((k, v) for k, v in obj.__dict__.items() if v)
 
-        return json.dumps(self, default=encodeState, indent=4, sort_keys=True)
+        self.check_taxonomies()
+
+        return json.dumps(self.sfn, default=encodeState, indent=4, sort_keys=True)
