@@ -1,12 +1,10 @@
 """example/test script for developing drench_sdk"""
-from resources import Resources
-from workflow import WorkFlow
-from flows import BatchFlow, GlueFlow
-from taxonomy import Taxonomy
+from drench_sdk.workflow import WorkFlow
+from drench_sdk.flows import BatchFlow, GlueFlow
+from drench_sdk.taxonomy import Taxonomy
 
 def main():
     """main func"""
-    resources = Resources()
 
     workflow = WorkFlow()
 

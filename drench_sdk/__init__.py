@@ -1,3 +1,5 @@
-"""define WorkFlow and export needed classes"""
-from flows import BatchFlow, SNSFlow, GlueFlow
-from workflow import WorkFlow
+"""export public classes"""
+from drench_sdk.workflow import WorkFlow
+from drench_sdk.flows import BatchFlow, GlueFlow, SNSFlow 
+from drench_sdk.taxonomy import Taxonomy 
+from drench_sdk.resources import Resources 

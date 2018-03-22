@@ -3,7 +3,7 @@
 #pylint: disable=invalid-name
 
 import json
-from states import SucceedState, FailState
+from drench_sdk.states import SucceedState, FailState
 
 FINISH_END_NAME = 'finish'
 FAILED_END_NAME = 'failed'

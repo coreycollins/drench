@@ -1,6 +1,6 @@
 """flows are fucntion-like packages of states"""
-from resources import Resources
-from states import TaskState, WaitState, PassState, ChoiceState
+from drench_sdk.resources import Resources
+from drench_sdk.states import TaskState, WaitState, PassState, ChoiceState
 
 resources = Resources()
 
