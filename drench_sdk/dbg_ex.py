@@ -8,7 +8,7 @@ def main():
     """main func"""
     resources = Resources()
 
-    workflow = WorkFlow(topic_arn=resources.get_arn('sns', 'example-drench-workflow'))
+    workflow = WorkFlow()
 
     workflow.addFlow(
         BatchFlow(

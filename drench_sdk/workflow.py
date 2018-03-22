@@ -3,16 +3,10 @@
 #pylint: disable=invalid-name
 
 import json
-from flows import SNSFlow
 from states import SucceedState, FailState
 
-FINISH_FLOW_NAME = 'SuccessSend'
 FINISH_END_NAME = 'finish'
-FINISH_SUBJ = 'Job succeeded'
-
-FAILED_FLOW_NAME = 'FailSend'
 FAILED_END_NAME = 'failed'
-FAILED_SUBJ = 'Job Failed'
 
 class TaxonomyMismatchError(BaseException):
     """ error indicating non-matched taxonomies """
@@ -22,9 +16,8 @@ class TaxonomyMismatchError(BaseException):
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self, comment=None, timeout=None, version=None, topic_arn=None):
+    def __init__(self, comment=None, timeout=None, version=None):
 
-        self.topic_arn = topic_arn
 
         self.flows = {}
 
@@ -44,37 +37,14 @@ class WorkFlow(object):
             FAILED_END_NAME: FailState(),
         }
 
-        if topic_arn:
-            self.sfn['States'] = {
-                **self.sfn['States'],
-                **SNSFlow(
-                    name=FINISH_FLOW_NAME,
-                    TopicArn=topic_arn,
-                    Subject=FINISH_SUBJ,
-                    Message=FINISH_SUBJ,
-                    on_succeed=FINISH_END_NAME,
-                    in_taxonomy=None,
-                    out_taxonomy=None
-                    ).states(),
-                **SNSFlow(
-                    name=FAILED_FLOW_NAME,
-                    TopicArn=topic_arn,
-                    Subject=FAILED_SUBJ,
-                    Message=FAILED_SUBJ,
-                    on_succeed=FAILED_END_NAME,
-                    in_taxonomy=None,
-                    out_taxonomy=None
-                    ).states(),
-            }
-
     def addFlow(self, Flow):
         """ adds flow's states to workflow, overwrites in the case of name colissions"""
         self.flows[Flow.name] = Flow
 
         if not Flow.on_succeed:
-            Flow.on_succeed = FINISH_FLOW_NAME if self.topic_arn else FINISH_END_NAME
+            Flow.on_succeed = FINISH_END_NAME
 
-        Flow.OnFail = FAILED_FLOW_NAME if self.topic_arn else FAILED_END_NAME
+        Flow.OnFail = FAILED_END_NAME
 
         if Flow.start:
             self.sfn['StartAt'] = Flow.name
@@ -84,7 +54,7 @@ class WorkFlow(object):
     def check_taxonomies(self):
         """make sure tanonomies match"""
         for flow in self.flows.values():
-            if flow.on_succeed and flow.on_succeed not in [FINISH_FLOW_NAME, FINISH_END_NAME]:
+            if flow.on_succeed and flow.on_succeed != FINISH_END_NAME:
                 if flow.out_taxonomy != self.flows[flow.on_succeed].in_taxonomy:
                     raise TaxonomyMismatchError()
 
