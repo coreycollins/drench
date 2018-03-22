@@ -1,5 +1,8 @@
 """flows are fucntion-like packages of states"""
+from resources import Resources
 from states import TaskState, WaitState, PassState, ChoiceState
+
+resources = Resources()
 
 class Flow(object):
     """docstring for Flow."""
@@ -13,14 +16,6 @@ class Flow(object):
     def states(self):
         """return compenent state objects"""
         pass
-
-    def get_resource(self, name):
-        """return resource ARNs"""
-        return f'arn-{name}'
-        #if self.Resources:
-        #    return self.Resources[name]
-        #else:
-        #    raise BaseException("No resources were applied to this flow.")
 
 class SNSFlow(Flow):
     """docstring for ."""
@@ -44,7 +39,7 @@ class SNSFlow(Flow):
         )
 
         states['%s.2.send' % self.name] = State=TaskState(
-            Resource=self.get_resource('send_sns'),
+            Resource=resources.get_arn('lambda', 'send_sns'),
             Next=self.on_succeed
         )
 
@@ -77,7 +72,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.2.run' % self.name] = TaskState(
-            Resource=self.get_resource('run_batch'),
+            Resource=resources.get_arn('lambda', 'run_batch'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.batch.jobId'
         )
@@ -88,7 +83,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.4.check' % self.name] = TaskState(
-            Resource=self.get_resource('check_batch'),
+            Resource=resources.get_arn('lambda', 'check_batch'),
             Next='%s.5.choice' % self.name,
             ResultPath="$.batch.status",
             Retry=[{
@@ -142,7 +137,7 @@ class GlueFlow(Flow):
         )
 
         states['%s.2.run' % self.name] = TaskState(
-            Resource=self.get_resource('run_glue'),
+            Resource=resources.get_arn('lambda', 'run_glue'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.glue.runId'
         )
@@ -153,7 +148,7 @@ class GlueFlow(Flow):
         )
 
         states['%s.4.check' % self.name] = TaskState(
-            Resource=self.get_resource('check_glue'),
+            Resource=resources.get_arn('lambda', 'check_glue'),
             Next='%s.5.choice' % self.name,
             ResultPath="$.glue.status",
             Retry=[{

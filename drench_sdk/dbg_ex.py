@@ -1,14 +1,14 @@
 """example/test script for developing drench_sdk"""
-from resource import Resource
+from resources import Resources
 from workflow import WorkFlow
 from flows import BatchFlow, GlueFlow
 from taxonomy import Taxonomy
 
 def main():
     """main func"""
-    resource = Resource()
+    resources = Resources()
 
-    workflow = WorkFlow(topic_arn = resource.get_arn(service='sns', resource='example-drench-workflow'))
+    workflow = WorkFlow(topic_arn=resources.get_arn('sns', 'example-drench-workflow'))
 
     workflow.addFlow(
         BatchFlow(

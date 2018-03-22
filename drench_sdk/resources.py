@@ -1,7 +1,7 @@
 """ resource.py """
 import os
 
-class Resource(object): # pylint: disable=too-few-public-methods
+class Resources(object): # pylint: disable=too-few-public-methods
     """ This class build a aws arn around specified resource types """
 
     @classmethod
