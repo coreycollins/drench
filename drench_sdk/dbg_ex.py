@@ -20,7 +20,7 @@ def main():
             parameters={
                 'job': '$.params.job'
             },
-            on_succeed='SuccessSend',
+            on_succeed='example-glue-job',
             start=True
         )
     )

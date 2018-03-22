@@ -33,27 +33,24 @@ class WorkFlow(object):
         if topic_arn:
             self.States = {
                 **self.States,
-                **{
-                    FINISH_FLOW_NAME: SNSFlow(
-                        name=FINISH_FLOW_NAME,
-                        TopicArn=topic_arn,
-                        Subject=FINISH_SUBJ,
-                        Message=FINISH_SUBJ,
-                        on_succeed=FINISH_END_NAME,
-                        in_taxonomy=None,
-                        out_taxonomy=None
-                    ),
-
-                    FAILED_FLOW_NAME: SNSFlow(
-                        name=FAILED_FLOW_NAME,
-                        TopicArn=topic_arn,
-                        Subject=FAILED_SUBJ,
-                        Message=FAILED_SUBJ,
-                        on_succeed=FAILED_END_NAME,
-                        in_taxonomy=None,
-                        out_taxonomy=None
-                    ),
-                }
+                **SNSFlow(
+                    name=FINISH_FLOW_NAME,
+                    TopicArn=topic_arn,
+                    Subject=FINISH_SUBJ,
+                    Message=FINISH_SUBJ,
+                    on_succeed=FINISH_END_NAME,
+                    in_taxonomy=None,
+                    out_taxonomy=None
+                    ).states(),
+                **SNSFlow(
+                    name=FAILED_FLOW_NAME,
+                    TopicArn=topic_arn,
+                    Subject=FAILED_SUBJ,
+                    Message=FAILED_SUBJ,
+                    on_succeed=FAILED_END_NAME,
+                    in_taxonomy=None,
+                    out_taxonomy=None
+                    ).states(),
             }
 
         self.Comment = Comment
