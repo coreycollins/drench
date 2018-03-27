@@ -1,16 +1,19 @@
 """flows are fucntion-like packages of states"""
 from drench_sdk.resources import Resources
-from drench_sdk.states import TaskState, WaitState, PassState, ChoiceState
+from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceState
 
-resources = Resources()
+#pylint:disable=too-few-public-methods
+#pylint:disable=invalid-name
 
-class Flow(object):
+RESOURCES = Resources()
+
+class Flow(State):
     """docstring for Flow."""
-    def __init__(self, name, in_taxonomy, out_taxonomy, on_succeed=None, start=False):
+    def __init__(self, name, in_taxonomy, out_taxonomy, on_succeed=None, **kwargs):
+        super(Flow, self).__init__(**kwargs)
         self.name = name
         self.in_taxonomy = in_taxonomy
         self.out_taxonomy = out_taxonomy
-        self.start = start
         self.on_succeed = on_succeed
 
     def states(self):
@@ -24,7 +27,7 @@ class SNSFlow(Flow):
         self.TopicArn = TopicArn
         self.Subject = Subject
         self.Message = Message
-        self.can_fail = False 
+        self.can_fail = False
 
     def states(self):
         states = {}
@@ -38,8 +41,8 @@ class SNSFlow(Flow):
             ResultPath='$.sns'
         )
 
-        states['%s.2.send' % self.name] = State=TaskState(
-            Resource=resources.get_arn('lambda', 'send_sns'),
+        states['%s.2.send' % self.name] = TaskState(
+            Resource=RESOURCES.get_arn('lambda', 'send_sns'),
             Next=self.on_succeed
         )
 
@@ -52,6 +55,7 @@ class BatchFlow(Flow):
         self.job_queue = job_queue
         self.job_definition = job_definition
         self.parameters = parameters
+        self.on_fail = None
 
     def states(self):
         setup = {
@@ -60,7 +64,7 @@ class BatchFlow(Flow):
             'jobDefinition': self.job_definition
         }
 
-        if (self.parameters):
+        if self.parameters:
             setup['parameters'] = self.parameters
 
         states = {}
@@ -72,7 +76,7 @@ class BatchFlow(Flow):
         )
 
         states['%s.2.run' % self.name] = TaskState(
-            Resource=resources.get_arn('lambda', 'run_batch'),
+            Resource=RESOURCES.get_arn('lambda', 'run_batch'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.batch.jobId'
         )
@@ -83,14 +87,14 @@ class BatchFlow(Flow):
         )
 
         states['%s.4.check' % self.name] = TaskState(
-            Resource=resources.get_arn('lambda', 'check_batch'),
+            Resource=RESOURCES.get_arn('lambda', 'check_batch'),
             Next='%s.5.choice' % self.name,
             ResultPath="$.batch.status",
             Retry=[{
-              "ErrorEquals": [ "Lambda.Unknown" ],
-              "IntervalSeconds": 30,
-              "MaxAttempts": 5,
-              "BackoffRate": 1.5
+                "ErrorEquals": ["Lambda.Unknown"],
+                "IntervalSeconds": 30,
+                "MaxAttempts": 5,
+                "BackoffRate": 1.5
             }]
         )
 
@@ -99,12 +103,12 @@ class BatchFlow(Flow):
                 {
                     "Variable": "$.batch.status",
                     "StringEquals": "FAILED",
-                    "Next": self.OnFail
+                    "Next": self.on_fail
                 },
                 {
-                  "Variable": "$.batch.status",
-                  "StringEquals": "SUCCEEDED",
-                  "Next": self.on_succeed
+                    "Variable": "$.batch.status",
+                    "StringEquals": "SUCCEEDED",
+                    "Next": self.on_succeed
                 }
             ],
             Default='%s.3.wait' % self.name
@@ -119,13 +123,14 @@ class GlueFlow(Flow):
         self.Jobname = Jobname
         self.Arguments = Arguments
         self.AllocatedCapacity = AllocatedCapacity
+        self.on_fail = None
 
     def states(self):
         setup = {
             'Jobname': self.Jobname,
             'AllocatedCapacity': self.AllocatedCapacity
         }
-        if (self.Arguments):
+        if self.Arguments:
             setup['Arguments'] = self.Arguments
 
         states = {}
@@ -137,7 +142,7 @@ class GlueFlow(Flow):
         )
 
         states['%s.2.run' % self.name] = TaskState(
-            Resource=resources.get_arn('lambda', 'run_glue'),
+            Resource=RESOURCES.get_arn('lambda', 'run_glue'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.glue.runId'
         )
@@ -148,14 +153,14 @@ class GlueFlow(Flow):
         )
 
         states['%s.4.check' % self.name] = TaskState(
-            Resource=resources.get_arn('lambda', 'check_glue'),
+            Resource=RESOURCES.get_arn('lambda', 'check_glue'),
             Next='%s.5.choice' % self.name,
             ResultPath="$.glue.status",
             Retry=[{
-              "ErrorEquals": [ "Lambda.Unknown" ],
-              "IntervalSeconds": 30,
-              "MaxAttempts": 5,
-              "BackoffRate": 1.5
+                "ErrorEquals": ["Lambda.Unknown"],
+                "IntervalSeconds": 30,
+                "MaxAttempts": 5,
+                "BackoffRate": 1.5
             }]
         )
 
@@ -164,12 +169,12 @@ class GlueFlow(Flow):
                 {
                     "Variable": "$.glue.status",
                     "StringEquals": "FAILED",
-                    "Next": self.OnFail
+                    "Next": self.on_fail
                 },
                 {
-                  "Variable": "$.glue.status",
-                  "StringEquals": "SUCCEEDED",
-                  "Next": self.on_succeed
+                    "Variable": "$.glue.status",
+                    "StringEquals": "SUCCEEDED",
+                    "Next": self.on_succeed
                 }
             ],
             Default='%s.3.wait' % self.name
