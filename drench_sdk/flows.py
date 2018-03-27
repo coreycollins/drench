@@ -9,12 +9,12 @@ RESOURCES = Resources()
 
 class Flow(State):
     """docstring for Flow."""
-    def __init__(self, name, in_taxonomy, out_taxonomy, on_succeed=None, **kwargs):
-        super(Flow, self).__init__(**kwargs)
+    def __init__(self, name, in_taxonomy, out_taxonomy, start=False, **kwargs):
+        super(Flow, self).__init__(Type='meta', **kwargs)
         self.name = name
         self.in_taxonomy = in_taxonomy
         self.out_taxonomy = out_taxonomy
-        self.on_succeed = on_succeed
+        self.start = start
 
     def states(self):
         """return compenent state objects"""
@@ -43,7 +43,7 @@ class SNSFlow(Flow):
 
         states['%s.2.send' % self.name] = TaskState(
             Resource=RESOURCES.get_arn('lambda', 'send_sns'),
-            Next=self.on_succeed
+            Next=self.Next
         )
 
         return states
@@ -108,7 +108,7 @@ class BatchFlow(Flow):
                 {
                     "Variable": "$.batch.status",
                     "StringEquals": "SUCCEEDED",
-                    "Next": self.on_succeed
+                    "Next": self.Next
                 }
             ],
             Default='%s.3.wait' % self.name
@@ -174,7 +174,7 @@ class GlueFlow(Flow):
                 {
                     "Variable": "$.glue.status",
                     "StringEquals": "SUCCEEDED",
-                    "Next": self.on_succeed
+                    "Next": self.Next
                 }
             ],
             Default='%s.3.wait' % self.name

@@ -1,18 +1,17 @@
 """Common states"""
-import json
 
-class StateException(BaseException):
-    def __int__(self, **kwargs):
-        super(StateException,__init__(self, **kwargs))
+#pylint:disable=too-few-public-methods
+#pylint:disable=too-many-arguments
+#pylint:disable=invalid-name
 
 class State(object):
     """Base class for a state in the state machine."""
-
-    def __init__(self, Type, InputPath=None, OutputPath=None, Next=None, End=False):
+    def __init__(self, Type, InputPath=None, ResultPath=None, OutputPath=None, Next=None, End=False):
         self.Type = Type
         self.Next = Next
         self.End = End
         self.InputPath = InputPath
+        self.ResultPath = ResultPath
         self.OutputPath = OutputPath
 
 class SucceedState(object):

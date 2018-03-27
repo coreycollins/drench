@@ -41,10 +41,10 @@ class WorkFlow(object):
         """ adds flow's states to workflow, overwrites in the case of name colissions"""
         self.flows[Flow.name] = Flow
 
-        if not Flow.on_succeed:
-            Flow.on_succeed = FINISH_END_NAME
+        if not Flow.Next:
+            Flow.Next = FINISH_END_NAME
 
-        Flow.OnFail = FAILED_END_NAME
+        Flow.on_fail = FAILED_END_NAME
 
         if Flow.start:
             self.sfn['StartAt'] = Flow.name
@@ -54,8 +54,8 @@ class WorkFlow(object):
     def check_taxonomies(self):
         """make sure tanonomies match"""
         for flow in self.flows.values():
-            if flow.on_succeed and flow.on_succeed != FINISH_END_NAME:
-                if flow.out_taxonomy != self.flows[flow.on_succeed].in_taxonomy:
+            if flow.Next and flow.Next != FINISH_END_NAME:
+                if flow.out_taxonomy != self.flows[flow.Next].in_taxonomy:
                     raise TaxonomyMismatchError()
 
     def toJson(self):

@@ -18,7 +18,7 @@ def main():
             parameters={
                 'job': '$.params.job'
             },
-            on_succeed='example-glue-job',
+            Next='example-glue-job',
             start=True
         )
     )
