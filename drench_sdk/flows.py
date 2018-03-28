@@ -127,7 +127,7 @@ class GlueFlow(Flow):
 
     def states(self):
         setup = {
-            'Jobname': self.Jobname,
+            'JobName': self.Jobname,
             'AllocatedCapacity': self.AllocatedCapacity
         }
         if self.Arguments:

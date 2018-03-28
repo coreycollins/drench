@@ -21,7 +21,7 @@ data "terraform_remote_state" "core" {
   backend = "s3"
   config {
     bucket = "infra.compass.com"
-    key    = "compass/development/core/state"
+    key    = "compass/production/core/state"
     region = "us-east-1"
   }
 }
