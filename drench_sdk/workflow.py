@@ -8,10 +8,15 @@ from drench_sdk.states import SucceedState, FailState
 FINISH_END_NAME = 'finish'
 FAILED_END_NAME = 'failed'
 
-class TaxonomyMismatchError(BaseException):
+class TaxonomyError(Exception):
     """ error indicating non-matched taxonomies """
-    def __init__(self, **kwargs):
-        super(TaxonomyMismatchError, self).__init__(**kwargs)
+    def __init__(self, taxonomy_one, taxonomy_two, **kwargs):
+        super(TaxonomyError, self).__init__(**kwargs)
+        self.taxonomy_one = taxonomy_one
+        self.taxonomy_two = taxonomy_two
+
+    def __str__(self):
+        return f'Taxonomies do not match:\n    {self.taxonomy_one!s}\n    {self.taxonomy_two!s}'
 
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
@@ -56,7 +61,7 @@ class WorkFlow(object):
         for flow in self.flows.values():
             if flow.Next and flow.Next != FINISH_END_NAME:
                 if flow.out_taxonomy != self.flows[flow.Next].in_taxonomy:
-                    raise TaxonomyMismatchError()
+                    raise TaxonomyError(flow.out_taxonomy, self.flows[flow.Next].in_taxonomy)
 
     def toJson(self):
         """dump Workflow to AWS Step Function JSON"""

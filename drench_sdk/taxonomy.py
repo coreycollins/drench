@@ -11,3 +11,5 @@ class Taxonomy(Mapping):
         return iter(self._storage)
     def __len__(self):
         return len(self._storage)
+    def __str__(self):
+        return dict(self).__str__()
