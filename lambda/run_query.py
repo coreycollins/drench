@@ -6,14 +6,14 @@ def handler(event, context): #pylint:disable=unused-argument
     client = boto3.client('athena', region_name='us-east-1')
 
     if 'query' in event:
-        query = event['glue']
+        query = event['query']
     else:
         raise BaseException("No query message sent")
 
     response = client.start_query_execution(
-        QueryString=query.QueryString,
-        QueryExecutionContext=query.QueryExecutionContext,
-        ResultConfiguration=query.ResultConfiguration
+        QueryString=query['QueryString'],
+        QueryExecutionContext=query['QueryExecutionContext'],
+        ResultConfiguration=query['ResultConfiguration']
     )
 
     return response['QueryExecutionId']

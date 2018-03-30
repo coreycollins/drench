@@ -11,7 +11,7 @@ def handler(event, context): #pylint:disable=unused-argument
         raise BaseException("No query message sent")
 
     response = client.start_query_execution(
-        QueryExecutionId=query.QueryExecutionId
+        QueryExecutionId=query['QueryExecutionId']
     )
 
     return response['QueryExecution']['Status']['State']

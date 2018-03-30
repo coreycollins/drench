@@ -1,6 +1,6 @@
 """example/test script for developing drench_sdk"""
 from drench_sdk.workflow import WorkFlow
-from drench_sdk.flows import GlueFlow
+from drench_sdk.transforms import QueryTransform
 from drench_sdk.taxonomy import Taxonomy
 
 def main():
@@ -9,16 +9,13 @@ def main():
     workflow = WorkFlow()
 
     workflow.addTransform(
-        GlueFlow(
-            name='test_csv_to_orc_sdk',
+        QueryTransform(
+            name='test_athena_query',
             in_taxonomy=Taxonomy(name=str),
             out_taxonomy=Taxonomy(name=str),
-            Jobname='test_csv_to_orc',
-            Arguments={
-                'input_path': 's3://temp.compass.com/input.csv',
-                'output_path': 's3://temp.compass.com/sdk_test_orc'
-                },
-            AllocatedCapacity=2,
+            QueryString='SELECT companyname, naics FROM us_business LIMIT 100;',
+            QueryExecutionContext={'Database':'analytics'},
+            ResultConfiguration={'OutputLocation': 's3://temp.compass.com/test_query_results'},
             start=True
         )
     )
