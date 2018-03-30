@@ -1,7 +1,7 @@
 """example/test script for developing drench_sdk"""
 import pytest
 from drench_sdk.workflow import WorkFlow, TaxonomyError
-from drench_sdk.flows import BatchFlow, GlueFlow
+from drench_sdk.transforms import BatchTransform, GlueTransform
 from drench_sdk.taxonomy import Taxonomy
 
 def test_tx_err():
@@ -10,7 +10,7 @@ def test_tx_err():
         workflow = WorkFlow()
 
         workflow.addFlow(
-            BatchFlow(
+            BatchTransform(
                 name='example-batch-flow',
                 in_taxonomy=Taxonomy(id=int, name=str),
                 out_taxonomy=Taxonomy(id=int, name=str),
@@ -25,7 +25,7 @@ def test_tx_err():
         )
 
         workflow.addFlow(
-            GlueFlow(
+            GlueTransform(
                 name='example-glue-job',
                 in_taxonomy=Taxonomy(name=str),
                 out_taxonomy=Taxonomy(name=str),

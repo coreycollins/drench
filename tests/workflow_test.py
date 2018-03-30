@@ -1,7 +1,7 @@
 """example/test script for developing drench_sdk"""
 import json
 from drench_sdk.workflow import WorkFlow
-from drench_sdk.flows import BatchFlow, GlueFlow
+from drench_sdk.transforms import BatchTransform, GlueTransform
 from drench_sdk.taxonomy import Taxonomy
 
 def test_workflow():
@@ -9,7 +9,7 @@ def test_workflow():
     workflow = WorkFlow()
 
     workflow.addFlow(
-        BatchFlow(
+        BatchTransform(
             name='example-batch-flow',
             in_taxonomy=Taxonomy(id=int, name=str),
             out_taxonomy=Taxonomy(name=str),
@@ -24,7 +24,7 @@ def test_workflow():
     )
 
     workflow.addFlow(
-        GlueFlow(
+        GlueTransform(
             name='example-glue-job',
             in_taxonomy=Taxonomy(name=str),
             out_taxonomy=Taxonomy(name=str),
