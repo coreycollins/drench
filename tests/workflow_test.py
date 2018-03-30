@@ -8,7 +8,7 @@ def test_workflow():
     """main func"""
     workflow = WorkFlow()
 
-    workflow.addFlow(
+    workflow.addTransform(
         BatchTransform(
             name='example-batch-flow',
             in_taxonomy=Taxonomy(id=int, name=str),
@@ -23,7 +23,7 @@ def test_workflow():
         )
     )
 
-    workflow.addFlow(
+    workflow.addTransform(
         GlueTransform(
             name='example-glue-job',
             in_taxonomy=Taxonomy(name=str),

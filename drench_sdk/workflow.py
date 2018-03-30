@@ -24,7 +24,7 @@ class WorkFlow(object):
     def __init__(self, comment=None, timeout=None, version=None):
 
 
-        self.flows = {}
+        self.transforms = {}
 
         self.sfn = {}
 
@@ -42,29 +42,29 @@ class WorkFlow(object):
             FAILED_END_NAME: FailState(),
         }
 
-    def addFlow(self, Flow):
-        """ adds flow's states to workflow, overwrites in the case of name colissions"""
-        self.flows[Flow.name] = Flow
+    def addTransform(self, transform):
+        """ adds transform's states to worktransform, overwrites in the case of name colissions"""
+        self.transforms[transform.name] = transform
 
-        if not Flow.Next:
-            Flow.Next = FINISH_END_NAME
+        if not transform.Next:
+            transform.Next = FINISH_END_NAME
 
-        Flow.on_fail = FAILED_END_NAME
+        transform.on_fail = FAILED_END_NAME
 
-        if Flow.start:
-            self.sfn['StartAt'] = Flow.name
+        if transform.start:
+            self.sfn['StartAt'] = transform.name
 
-        self.sfn['States'] = {**self.sfn['States'], **Flow.states()}
+        self.sfn['States'] = {**self.sfn['States'], **transform.states()}
 
     def check_taxonomies(self):
         """make sure tanonomies match"""
-        for flow in self.flows.values():
-            if flow.Next and flow.Next != FINISH_END_NAME:
-                if flow.out_taxonomy != self.flows[flow.Next].in_taxonomy:
-                    raise TaxonomyError(flow.out_taxonomy, self.flows[flow.Next].in_taxonomy)
+        for transform in self.transforms.values():
+            if transform.Next and transform.Next != FINISH_END_NAME:
+                if transform.out_taxonomy != self.transforms[transform.Next].in_taxonomy:
+                    raise TaxonomyError(transform.out_taxonomy, self.transforms[transform.Next].in_taxonomy)
 
     def toJson(self):
-        """dump Workflow to AWS Step Function JSON"""
+        """dump Worktransform to AWS Step Function JSON"""
         def encodeState(obj):
             """coerce object into dicts"""
             return dict((k, v) for k, v in obj.__dict__.items() if v)

@@ -9,7 +9,7 @@ def test_tx_err():
     with pytest.raises(TaxonomyError):
         workflow = WorkFlow()
 
-        workflow.addFlow(
+        workflow.addTransform(
             BatchTransform(
                 name='example-batch-flow',
                 in_taxonomy=Taxonomy(id=int, name=str),
@@ -24,7 +24,7 @@ def test_tx_err():
             )
         )
 
-        workflow.addFlow(
+        workflow.addTransform(
             GlueTransform(
                 name='example-glue-job',
                 in_taxonomy=Taxonomy(name=str),
