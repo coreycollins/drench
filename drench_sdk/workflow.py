@@ -1,4 +1,4 @@
-"""workflows are a wrapper for aws step fucntions"""
+
 #violate pep8 so workflows can dump AWS-friendly JSON
 #pylint: disable=invalid-name
 
@@ -51,7 +51,7 @@ class WorkFlow(object):
 
         transform.on_fail = FAILED_END_NAME
 
-        if transform.start:
+        if transform.Start:
             self.sfn['StartAt'] = transform.name
 
         self.sfn['States'] = {**self.sfn['States'], **transform.states()}

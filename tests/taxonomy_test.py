@@ -20,7 +20,7 @@ def test_tx_err():
                     'job': '$.params.job'
                 },
                 Next='example-glue-job',
-                start=True
+                Start=True
             )
         )
 

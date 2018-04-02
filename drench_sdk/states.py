@@ -6,9 +6,10 @@
 
 class State(object):
     """Base class for a state in the state machine."""
-    def __init__(self, Type, InputPath=None, ResultPath=None, OutputPath=None, Next=None, End=False):
+    def __init__(self, Type, InputPath=None, ResultPath=None, OutputPath=None, Next=None, Start=False, End=False):
         self.Type = Type
         self.Next = Next
+        self.Start = Start
         self.End = End
         self.InputPath = InputPath
         self.ResultPath = ResultPath

@@ -19,7 +19,7 @@ def test_workflow():
                 'job': '$.params.job'
             },
             Next='example-glue-job',
-            start=True
+            Start=True
         )
     )
 

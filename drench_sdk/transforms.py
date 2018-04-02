@@ -9,12 +9,12 @@ RESOURCES = Resources()
 
 class Transform(State):
     """docstring for Transform."""
-    def __init__(self, name, in_taxonomy, out_taxonomy, start=False, **kwargs):
+    def __init__(self, name, in_taxonomy, out_taxonomy, on_fail=None, **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
         self.in_taxonomy = in_taxonomy
         self.out_taxonomy = out_taxonomy
-        self.start = start
+        self.on_fail = on_fail
 
     def states(self):
         """return compenent state objects"""
@@ -27,7 +27,6 @@ class SNSTransform(Transform):
         self.TopicArn = TopicArn
         self.Subject = Subject
         self.Message = Message
-        self.can_fail = False
 
     def states(self):
         states = {}
@@ -42,7 +41,7 @@ class SNSTransform(Transform):
         )
 
         states['%s.2.send' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function', 'send_sns'),
+            Resource=RESOURCES.get_arn('lambda', 'function:send_sns'),
             Next=self.Next
         )
 
@@ -55,7 +54,6 @@ class BatchTransform(Transform):
         self.job_queue = job_queue
         self.job_definition = job_definition
         self.parameters = parameters
-        self.on_fail = None
 
     def states(self):
         setup = {
@@ -76,7 +74,7 @@ class BatchTransform(Transform):
         )
 
         states['%s.2.run' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function', 'development-run_batch'),
+            Resource=RESOURCES.get_arn('lambda', 'function:development-run_batch'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.batch.jobId'
         )
@@ -87,7 +85,7 @@ class BatchTransform(Transform):
         )
 
         states['%s.4.check' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function', 'development-check_batch'),
+            Resource=RESOURCES.get_arn('lambda', 'function:development-check_batch'),
             Next='%s.5.choice' % self.name,
             ResultPath="$.batch.status",
             Retry=[{
@@ -123,7 +121,6 @@ class GlueTransform(Transform):
         self.Jobname = Jobname
         self.Arguments = Arguments
         self.AllocatedCapacity = AllocatedCapacity
-        self.on_fail = None
 
     def states(self):
         setup = {
@@ -142,7 +139,7 @@ class GlueTransform(Transform):
         )
 
         states['%s.2.run' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function', 'development-run_glue'),
+            Resource=RESOURCES.get_arn('lambda', 'function:development-run_glue'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.glue.runId'
         )
@@ -153,7 +150,7 @@ class GlueTransform(Transform):
         )
 
         states['%s.4.check' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function', 'development-check_glue'),
+            Resource=RESOURCES.get_arn('lambda', 'function:development-check_glue'),
             Next='%s.5.choice' % self.name,
             ResultPath="$.glue.status",
             Retry=[{
@@ -189,7 +186,6 @@ class QueryTransform(Transform):
         self.QueryString = QueryString
         self.QueryExecutionContext = QueryExecutionContext
         self.ResultConfiguration = ResultConfiguration
-        self.on_fail = None
 
     def states(self):
         setup = {
@@ -207,7 +203,7 @@ class QueryTransform(Transform):
         )
 
         states['%s.2.run' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function', 'development-run_query'),
+            Resource=RESOURCES.get_arn('lambda', 'function:development-run_query'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.query.QueryExecutionId'
         )
@@ -218,7 +214,7 @@ class QueryTransform(Transform):
         )
 
         states['%s.4.check' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function', 'development-check_query'),
+            Resource=RESOURCES.get_arn('lambda', 'function:development-check_query'),
             Next='%s.5.choice' % self.name,
             ResultPath="$.query.status",
             Retry=[{
