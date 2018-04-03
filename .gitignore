@@ -20,3 +20,6 @@ build/
 secret.tfvars
 .terraform
 terraform.tfstate.d/
+dist/
+.pytest_cache/
+.coverage

@@ -21,7 +21,7 @@ data "terraform_remote_state" "core" {
   backend = "s3"
   config {
     bucket = "infra.compass.com"
-    key    = "compass/development/core/state"
+    key    = "compass/production/core/state"
     region = "us-east-1"
   }
 }
@@ -48,6 +48,7 @@ resource "aws_lambda_function" "run_batch" {
   handler           = "run_batch.handler"
   runtime           = "python2.7"
 }
+
 output "aws_lambda_run_batch" {
   value = "${aws_lambda_function.run_batch.arn}"
 }
@@ -62,6 +63,7 @@ resource "aws_lambda_function" "check_glue" {
   handler           = "check_glue.handler"
   runtime           = "python2.7"
 }
+
 output "aws_lambda_check_glue" {
   value = "${aws_lambda_function.check_glue.arn}"
 }
@@ -75,10 +77,38 @@ resource "aws_lambda_function" "run_glue" {
   handler           = "run_glue.handler"
   runtime           = "python2.7"
 }
+
 output "aws_lambda_run_glue" {
   value = "${aws_lambda_function.run_glue.arn}"
 }
 
+# Query Job Status Check
+resource "aws_lambda_function" "check_query" {
+  function_name     = "${terraform.workspace}-check_query"
+  filename          = "build/lambda_functions.zip"
+  source_code_hash  = "${base64sha256(file("build/lambda_functions.zip"))}"
+  role              = "${data.terraform_remote_state.core.aws_iam_lambda_exec_role}"
+  handler           = "check_query.handler"
+  runtime           = "python2.7"
+}
+
+output "aws_lambda_check_query" {
+  value = "${aws_lambda_function.check_query.arn}"
+}
+
+# Run Query Job
+resource "aws_lambda_function" "run_query" {
+  function_name     = "${terraform.workspace}-run_query"
+  filename          = "build/lambda_functions.zip"
+  source_code_hash  = "${base64sha256(file("build/lambda_functions.zip"))}"
+  role              = "${data.terraform_remote_state.core.aws_iam_lambda_exec_role}"
+  handler           = "run_query.handler"
+  runtime           = "python2.7"
+}
+
+output "aws_lambda_run_query" {
+  value = "${aws_lambda_function.run_query.arn}"
+}
 
 # Send SNS Message
 resource "aws_lambda_function" "send_sns" {
