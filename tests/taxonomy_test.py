@@ -7,7 +7,7 @@ from drench_sdk.taxonomy import Taxonomy
 def test_tx_err():
     """main func"""
     with pytest.raises(TaxonomyError):
-        workflow = WorkFlow()
+        workflow = WorkFlow(pool_id=1234)
 
         workflow.addTransform(
             BatchTransform(

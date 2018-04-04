@@ -13,3 +13,10 @@ class Taxonomy(Mapping):
         return len(self._storage)
     def __str__(self):
         return dict(self).__str__()
+
+    def to_json(self):
+        '''make json.dumps-friendly dict'''
+        out_dict = {}
+        for key, val in self._storage.items():
+            out_dict[key] = val.__name__
+        return out_dict

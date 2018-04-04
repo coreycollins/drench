@@ -1,10 +1,9 @@
 """example/test script for developing drench_sdk"""
-import json
 from drench_sdk.workflow import WorkFlow
 from drench_sdk.transforms import BatchTransform, GlueTransform
 from drench_sdk.taxonomy import Taxonomy
 
-def test_workflow():
+def example_workflow():
     """main func"""
     workflow = WorkFlow(pool_id=1234)
 
@@ -33,8 +32,7 @@ def test_workflow():
         )
     )
 
-    correct_sfn = ''
-    with open('tests/correct.json') as file_handle:
-        correct_sfn = file_handle.read()
+    print(workflow.toJson())
 
-    assert json.loads(workflow.toJson()) == json.loads(correct_sfn)
+if __name__ == '__main__':
+    example_workflow()

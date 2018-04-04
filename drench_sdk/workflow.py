@@ -1,4 +1,4 @@
-
+'''workflows: chained and orchestrated sets of transforms'''
 #violate pep8 so workflows can dump AWS-friendly JSON
 #pylint: disable=invalid-name
 
@@ -7,6 +7,8 @@ from drench_sdk.states import SucceedState, FailState
 
 FINISH_END_NAME = 'finish'
 FAILED_END_NAME = 'failed'
+
+DO_NOT_DICT_ENCODE = ['str', 'int']
 
 class TaxonomyError(Exception):
     """ error indicating non-matched taxonomies """
@@ -21,8 +23,9 @@ class TaxonomyError(Exception):
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self, comment=None, timeout=None, version=None):
+    def __init__(self, pool_id=None, comment=None, timeout=None, version=None):
 
+        self.pool_id = pool_id
 
         self.transforms = {}
 
@@ -45,6 +48,7 @@ class WorkFlow(object):
     def addTransform(self, transform):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
         self.transforms[transform.name] = transform
+        transform.pool_id = self.pool_id
 
         if not transform.Next:
             transform.Next = FINISH_END_NAME
@@ -58,16 +62,19 @@ class WorkFlow(object):
 
     def check_taxonomies(self):
         """make sure tanonomies match"""
-        for transform in self.transforms.values():
-            if transform.Next and transform.Next != FINISH_END_NAME:
-                if transform.out_taxonomy != self.transforms[transform.Next].in_taxonomy:
-                    raise TaxonomyError(transform.out_taxonomy, self.transforms[transform.Next].in_taxonomy)
+        for tf in self.transforms.values():
+            if tf.Next and tf.Next != FINISH_END_NAME:
+                if tf.out_taxonomy != self.transforms[tf.Next].in_taxonomy:
+                    raise TaxonomyError(tf.out_taxonomy, self.transforms[tf.Next].in_taxonomy)
 
     def toJson(self):
         """dump Worktransform to AWS Step Function JSON"""
         def encodeState(obj):
             """coerce object into dicts"""
-            return dict((k, v) for k, v in obj.__dict__.items() if v)
+            try:
+                return obj.to_json()
+            except AttributeError:
+                return dict((k, v) for k, v in obj.__dict__.items() if v)
 
         self.check_taxonomies()
 

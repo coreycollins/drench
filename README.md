@@ -9,7 +9,8 @@ a set of tools for automating business logic
 - [x] Batch
 - [x] Glue
 - [x] SNS
-- [ ] Athena Query
+- [x] Athena Query
 - [ ] Call Drench API on completion
 - [ ] CI Deploy Lambdas
 - [ ] Unit Tests
+- [ ] Define and enforce rules for taxonomies

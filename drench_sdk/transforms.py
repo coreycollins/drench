@@ -15,6 +15,7 @@ class Transform(State):
         self.in_taxonomy = in_taxonomy
         self.out_taxonomy = out_taxonomy
         self.on_fail = on_fail
+        self.pool_id = None # set by WorkFlow.addTransform
 
     def states(self):
         """return compenent state objects"""
@@ -99,6 +100,50 @@ class BatchTransform(Transform):
         states['%s.5.choice' % self.name] = ChoiceState(
             Choices=[
                 {
+                    "OR": [
+                        {
+                            "Variable": "$.batch.status",
+                            "StringEquals": "FAILED",
+                        },
+                        {
+                            "Variable": "$.batch.status",
+                            "StringEquals": "SUCCEEDED",
+                        }
+                    ],
+
+                    "Next": f'{self.name}.6.pass_params'
+                }
+            ],
+            Default='%s.3.wait' % self.name
+        )
+
+        states[f'{self.name}.6.pass_params'] = PassState(
+            Result={
+                "pool_id": self.pool_id,
+                "name": self.name,
+                "output_taxonomy": self.out_taxonomy,
+                "type": "batch",
+                "state": "$.batch.status",
+                },
+            ResultPath='$.payload',
+            Next=f'{self.name}.7.add_result'
+        )
+
+        states['%s.7.add_result' % self.name] = TaskState(
+            Resource=RESOURCES.get_arn('lambda', 'function:development-add_result'),
+            Next='%s.8.choice' % self.name,
+            ResultPath="$.payload",
+            Retry=[{
+                "ErrorEquals": ["Lambda.Unknown"],
+                "IntervalSeconds": 30,
+                "MaxAttempts": 5,
+                "BackoffRate": 1.5
+            }]
+        )
+
+        states['%s.8.choice' % self.name] = ChoiceState(
+            Choices=[
+                {
                     "Variable": "$.batch.status",
                     "StringEquals": "FAILED",
                     "Next": self.on_fail
@@ -109,7 +154,7 @@ class BatchTransform(Transform):
                     "Next": self.Next
                 }
             ],
-            Default='%s.3.wait' % self.name
+            Default=self.on_fail
         )
 
         return states
