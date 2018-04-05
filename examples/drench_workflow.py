@@ -1,6 +1,6 @@
 """example/test script for developing drench_sdk"""
 from drench_sdk.workflow import WorkFlow
-from drench_sdk.transforms import BatchTransform, GlueTransform
+from drench_sdk.transforms import BatchTransform, GlueTransform, QueryTransform
 from drench_sdk.taxonomy import Taxonomy
 
 def example_workflow():
@@ -8,8 +8,21 @@ def example_workflow():
     workflow = WorkFlow(pool_id=1234)
 
     workflow.addTransform(
+        QueryTransform(
+            name='example-query-transform',
+            in_taxonomy=Taxonomy(name=str),
+            out_taxonomy=Taxonomy(id=int, name=str),
+            QueryString='SELECT id, name FROM some_table LIMIT 100;',
+            QueryExecutionContext={'Database':'some_db'},
+            ResultConfiguration={'OutputLocation': 's3://some_bucket/example_query_results'},
+            Next='example-batch-transform',
+            Start=True
+        )
+    )
+
+    workflow.addTransform(
         BatchTransform(
-            name='example-batch-flow',
+            name='example-batch-transform',
             in_taxonomy=Taxonomy(id=int, name=str),
             out_taxonomy=Taxonomy(name=str),
             job_queue='test-queue',
@@ -17,14 +30,13 @@ def example_workflow():
             parameters={
                 'job': '$.params.job'
             },
-            Next='example-glue-job',
-            Start=True
+            Next='example-glue-transform',
         )
     )
 
     workflow.addTransform(
         GlueTransform(
-            name='example-glue-job',
+            name='example-glue-transform',
             in_taxonomy=Taxonomy(name=str),
             out_taxonomy=Taxonomy(name=str),
             Jobname='example-job-def',

@@ -17,9 +17,94 @@ class Transform(State):
         self.on_fail = on_fail
         self.pool_id = None # set by WorkFlow.addTransform
 
+        self.steps = {}
+
     def states(self):
-        """return compenent state objects"""
+        '''compile and return all steps in the transform'''
         pass
+
+    def append_wait_result_choice(self, task_type, wait_seconds):
+        '''add consistent pattern after task states'''
+
+        self.steps[f'{self.name}.{len(self.steps)+1}.wait'] = WaitState(
+            Seconds=wait_seconds,
+            Next=f'{self.name}.{len(self.steps)+2}.check_{task_type}',
+        )
+
+
+        self.steps[f'{self.name}.{len(self.steps)+1}.check_{task_type}'] = TaskState(
+            Resource=RESOURCES.get_arn('lambda', f'function:development-check_{task_type}'),
+            Next=f'{self.name}.{len(self.steps)+2}.choice',
+            ResultPath="$.batch.status",
+            Retry=[{
+                "ErrorEquals": ["Lambda.Unknown"],
+                "IntervalSeconds": 30,
+                "MaxAttempts": 5,
+                "BackoffRate": 1.5
+            }]
+        )
+
+        self.steps[f'{self.name}.{len(self.steps)+1}.choice'] = ChoiceState(
+            Choices=[
+                {
+                    "OR": [
+                        {
+                            "Variable": "$.batch.status",
+                            "StringEquals": "FAILED",
+                        },
+                        {
+                            "Variable": "$.batch.status",
+                            "StringEquals": "SUCCEEDED",
+                        }
+                    ],
+
+                    "Next": f'{self.name}.{len(self.steps)+2}.pass_params'
+                }
+            ],
+            Default=f'{self.name}.{len(self.steps)-1}.wait'
+        )
+
+        self.steps[f'{self.name}.{len(self.steps)+1}.pass_params'] = PassState(
+            Result={
+                "pool_id": self.pool_id,
+                "name": self.name,
+                "output_taxonomy": self.out_taxonomy,
+                "type": "batch",
+                "state": "$.batch.status",
+                },
+            ResultPath='$.payload',
+            Next=f'{self.name}.{len(self.steps)+2}.add_result'
+        )
+
+        self.steps[f'{self.name}.{len(self.steps)+1}.add_result'] = TaskState(
+            Resource=RESOURCES.get_arn('lambda', 'function:development-add_result'),
+            Next=f'{self.name}.{len(self.steps)+2}.choice',
+            ResultPath="$.payload",
+            Retry=[{
+                "ErrorEquals": ["Lambda.Unknown"],
+                "IntervalSeconds": 30,
+                "MaxAttempts": 5,
+                "BackoffRate": 1.5
+            }]
+        )
+
+        self.steps[f'{self.name}.{len(self.steps)+1}.choice'] = ChoiceState(
+            Choices=[
+                {
+                    "Variable": "$.batch.status",
+                    "StringEquals": "FAILED",
+                    "Next": self.on_fail
+                },
+                {
+                    "Variable": "$.batch.status",
+                    "StringEquals": "SUCCEEDED",
+                    "Next": self.Next
+                }
+            ],
+            Default=self.on_fail
+        )
+
+
 
 class SNSTransform(Transform):
     """docstring for ."""
@@ -30,8 +115,7 @@ class SNSTransform(Transform):
         self.Message = Message
 
     def states(self):
-        states = {}
-        states[self.name] = PassState(
+        self.steps[self.name] = PassState(
             Next='%s.2.send' % self.name,
             Result={
                 'arn': self.TopicArn,
@@ -41,12 +125,13 @@ class SNSTransform(Transform):
             ResultPath='$.sns'
         )
 
-        states['%s.2.send' % self.name] = TaskState(
+        self.steps['%s.2.send' % self.name] = TaskState(
             Resource=RESOURCES.get_arn('lambda', 'function:send_sns'),
             Next=self.Next
         )
 
-        return states
+        return self.steps
+
 
 class BatchTransform(Transform):
     """docstring for ."""
@@ -66,98 +151,23 @@ class BatchTransform(Transform):
         if self.parameters:
             setup['parameters'] = self.parameters
 
-        states = {}
 
-        states[self.name] = PassState(
+        self.steps[self.name] = PassState(
             Result=setup,
             ResultPath='$.batch',
             Next='%s.2.run' % self.name,
         )
 
-        states['%s.2.run' % self.name] = TaskState(
+        self.steps['%s.2.run' % self.name] = TaskState(
             Resource=RESOURCES.get_arn('lambda', 'function:development-run_batch'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.batch.jobId'
         )
 
-        states['%s.3.wait' % self.name] = WaitState(
-            Seconds=200,
-            Next='%s.4.check' % self.name
-        )
+        self.append_wait_result_choice('batch', 180)
 
-        states['%s.4.check' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function:development-check_batch'),
-            Next='%s.5.choice' % self.name,
-            ResultPath="$.batch.status",
-            Retry=[{
-                "ErrorEquals": ["Lambda.Unknown"],
-                "IntervalSeconds": 30,
-                "MaxAttempts": 5,
-                "BackoffRate": 1.5
-            }]
-        )
+        return self.steps
 
-        states['%s.5.choice' % self.name] = ChoiceState(
-            Choices=[
-                {
-                    "OR": [
-                        {
-                            "Variable": "$.batch.status",
-                            "StringEquals": "FAILED",
-                        },
-                        {
-                            "Variable": "$.batch.status",
-                            "StringEquals": "SUCCEEDED",
-                        }
-                    ],
-
-                    "Next": f'{self.name}.6.pass_params'
-                }
-            ],
-            Default='%s.3.wait' % self.name
-        )
-
-        states[f'{self.name}.6.pass_params'] = PassState(
-            Result={
-                "pool_id": self.pool_id,
-                "name": self.name,
-                "output_taxonomy": self.out_taxonomy,
-                "type": "batch",
-                "state": "$.batch.status",
-                },
-            ResultPath='$.payload',
-            Next=f'{self.name}.7.add_result'
-        )
-
-        states['%s.7.add_result' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function:development-add_result'),
-            Next='%s.8.choice' % self.name,
-            ResultPath="$.payload",
-            Retry=[{
-                "ErrorEquals": ["Lambda.Unknown"],
-                "IntervalSeconds": 30,
-                "MaxAttempts": 5,
-                "BackoffRate": 1.5
-            }]
-        )
-
-        states['%s.8.choice' % self.name] = ChoiceState(
-            Choices=[
-                {
-                    "Variable": "$.batch.status",
-                    "StringEquals": "FAILED",
-                    "Next": self.on_fail
-                },
-                {
-                    "Variable": "$.batch.status",
-                    "StringEquals": "SUCCEEDED",
-                    "Next": self.Next
-                }
-            ],
-            Default=self.on_fail
-        )
-
-        return states
 
 class GlueTransform(Transform):
     """docstring for ."""
@@ -175,54 +185,23 @@ class GlueTransform(Transform):
         if self.Arguments:
             setup['Arguments'] = self.Arguments
 
-        states = {}
+        self.steps = {}
 
-        states[self.name] = PassState(
+        self.steps[self.name] = PassState(
             Result=setup,
             ResultPath='$.glue',
             Next='%s.2.run' % self.name
         )
 
-        states['%s.2.run' % self.name] = TaskState(
+        self.steps['%s.2.run' % self.name] = TaskState(
             Resource=RESOURCES.get_arn('lambda', 'function:development-run_glue'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.glue.runId'
         )
 
-        states['%s.3.wait' % self.name] = WaitState(
-            Seconds=200,
-            Next='%s.4.check' % self.name
-        )
+        self.append_wait_result_choice('glue', 600)
 
-        states['%s.4.check' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function:development-check_glue'),
-            Next='%s.5.choice' % self.name,
-            ResultPath="$.glue.status",
-            Retry=[{
-                "ErrorEquals": ["Lambda.Unknown"],
-                "IntervalSeconds": 30,
-                "MaxAttempts": 5,
-                "BackoffRate": 1.5
-            }]
-        )
-
-        states['%s.5.choice' % self.name] = ChoiceState(
-            Choices=[
-                {
-                    "Variable": "$.glue.status",
-                    "StringEquals": "FAILED",
-                    "Next": self.on_fail
-                },
-                {
-                    "Variable": "$.glue.status",
-                    "StringEquals": "SUCCEEDED",
-                    "Next": self.Next
-                }
-            ],
-            Default='%s.3.wait' % self.name
-        )
-
-        return states
+        return self.steps
 
 class QueryTransform(Transform):
     """docstring for ."""
@@ -239,56 +218,18 @@ class QueryTransform(Transform):
             'ResultConfiguration': self.ResultConfiguration
         }
 
-        states = {}
-
-        states[self.name] = PassState(
+        self.steps[self.name] = PassState(
             Result=setup,
             ResultPath='$.query',
             Next='%s.2.run' % self.name
         )
 
-        states['%s.2.run' % self.name] = TaskState(
+        self.steps['%s.2.run' % self.name] = TaskState(
             Resource=RESOURCES.get_arn('lambda', 'function:development-run_query'),
             Next='%s.3.wait' % self.name,
             ResultPath='$.query.QueryExecutionId'
         )
 
-        states['%s.3.wait' % self.name] = WaitState(
-            Seconds=200,
-            Next='%s.4.check' % self.name
-        )
+        self.append_wait_result_choice('query', 30)
 
-        states['%s.4.check' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function:development-check_query'),
-            Next='%s.5.choice' % self.name,
-            ResultPath="$.query.status",
-            Retry=[{
-                "ErrorEquals": ["Lambda.Unknown"],
-                "IntervalSeconds": 30,
-                "MaxAttempts": 5,
-                "BackoffRate": 1.5
-            }]
-        )
-
-        states['%s.5.choice' % self.name] = ChoiceState(
-            Choices=[
-                {
-                    "Variable": "$.query.status",
-                    "StringEquals": "FAILED",
-                    "Next": self.on_fail
-                },
-                {
-                    "Variable": "$.query.status",
-                    "StringEquals": "CANCELLED",
-                    "Next": self.on_fail
-                },
-                {
-                    "Variable": "$.query.status",
-                    "StringEquals": "SUCCEEDED",
-                    "Next": self.Next
-                }
-            ],
-            Default='%s.3.wait' % self.name
-        )
-
-        return states
+        return self.steps
