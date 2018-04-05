@@ -10,11 +10,12 @@ def example_workflow():
     workflow.addTransform(
         QueryTransform(
             name='example-query-transform',
-            in_taxonomy=Taxonomy(name=str),
-            out_taxonomy=Taxonomy(id=int, name=str),
+            output_data={
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(id=int, name=str),
+                },
+            database='some_db',
             QueryString='SELECT id, name FROM some_table LIMIT 100;',
-            QueryExecutionContext={'Database':'some_db'},
-            ResultConfiguration={'OutputLocation': 's3://some_bucket/example_query_results'},
             Next='example-batch-transform',
             Start=True
         )
@@ -23,8 +24,14 @@ def example_workflow():
     workflow.addTransform(
         BatchTransform(
             name='example-batch-transform',
-            in_taxonomy=Taxonomy(id=int, name=str),
-            out_taxonomy=Taxonomy(name=str),
+            input_data={
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(id=int, name=str),
+                },
+            output_data={
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(name=str),
+                },
             job_queue='test-queue',
             job_definition='sap-job-execution',
             parameters={
@@ -37,8 +44,14 @@ def example_workflow():
     workflow.addTransform(
         GlueTransform(
             name='example-glue-transform',
-            in_taxonomy=Taxonomy(name=str),
-            out_taxonomy=Taxonomy(name=str),
+            input_data={
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(name=str),
+                },
+            output_data={
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(id=int, name=str),
+                },
             Jobname='example-job-def',
             AllocatedCapacity=2
         )

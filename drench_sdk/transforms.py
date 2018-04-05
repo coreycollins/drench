@@ -1,4 +1,4 @@
-"""flows are fucntion-like packages of states"""
+'''flows are fucntion-like packages of states'''
 from drench_sdk.resources import Resources
 from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceState
 
@@ -7,13 +7,18 @@ from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceStat
 
 RESOURCES = Resources()
 
-class Transform(State):
-    """docstring for Transform."""
-    def __init__(self, name, in_taxonomy, out_taxonomy, on_fail=None, **kwargs):
+class Transform(State): #pylint:disable=too-many-instance-attributes
+    '''docstring for Transform.'''
+    def __init__(self, name, output_data, input_data=None, on_fail=None, **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
-        self.in_taxonomy = in_taxonomy
-        self.out_taxonomy = out_taxonomy
+        self.out_path = output_data['path']
+        self.out_taxonomy = output_data['taxonomy']
+
+        if input_data:
+            self.in_path = input_data['path']
+            self.in_taxonomy = input_data['taxonomy']
+
         self.on_fail = on_fail
         self.pool_id = None # set by WorkFlow.addTransform
 
@@ -35,30 +40,30 @@ class Transform(State):
         self.steps[f'{self.name}.{len(self.steps)+1}.check_{task_type}'] = TaskState(
             Resource=RESOURCES.get_arn('lambda', f'function:development-check_{task_type}'),
             Next=f'{self.name}.{len(self.steps)+2}.choice',
-            ResultPath="$.batch.status",
+            ResultPath='$.batch.status',
             Retry=[{
-                "ErrorEquals": ["Lambda.Unknown"],
-                "IntervalSeconds": 30,
-                "MaxAttempts": 5,
-                "BackoffRate": 1.5
+                'ErrorEquals': ['Lambda.Unknown'],
+                'IntervalSeconds': 30,
+                'MaxAttempts': 5,
+                'BackoffRate': 1.5
             }]
         )
 
         self.steps[f'{self.name}.{len(self.steps)+1}.choice'] = ChoiceState(
             Choices=[
                 {
-                    "OR": [
+                    'OR': [
                         {
-                            "Variable": "$.batch.status",
-                            "StringEquals": "FAILED",
+                            'Variable': '$.batch.status',
+                            'StringEquals': 'FAILED',
                         },
                         {
-                            "Variable": "$.batch.status",
-                            "StringEquals": "SUCCEEDED",
+                            'Variable': '$.batch.status',
+                            'StringEquals': 'SUCCEEDED',
                         }
                     ],
 
-                    "Next": f'{self.name}.{len(self.steps)+2}.pass_params'
+                    'Next': f'{self.name}.{len(self.steps)+2}.pass_params'
                 }
             ],
             Default=f'{self.name}.{len(self.steps)-1}.wait'
@@ -66,11 +71,12 @@ class Transform(State):
 
         self.steps[f'{self.name}.{len(self.steps)+1}.pass_params'] = PassState(
             Result={
-                "pool_id": self.pool_id,
-                "name": self.name,
-                "output_taxonomy": self.out_taxonomy,
-                "type": "batch",
-                "state": "$.batch.status",
+                'pool_id': self.pool_id,
+                'name': self.name,
+                'output_path': self.out_path,
+                'output_taxonomy': self.out_taxonomy,
+                'type': 'batch',
+                'state': '$.batch.status',
                 },
             ResultPath='$.payload',
             Next=f'{self.name}.{len(self.steps)+2}.add_result'
@@ -79,26 +85,26 @@ class Transform(State):
         self.steps[f'{self.name}.{len(self.steps)+1}.add_result'] = TaskState(
             Resource=RESOURCES.get_arn('lambda', 'function:development-add_result'),
             Next=f'{self.name}.{len(self.steps)+2}.choice',
-            ResultPath="$.payload",
+            ResultPath='$.payload',
             Retry=[{
-                "ErrorEquals": ["Lambda.Unknown"],
-                "IntervalSeconds": 30,
-                "MaxAttempts": 5,
-                "BackoffRate": 1.5
+                'ErrorEquals': ['Lambda.Unknown'],
+                'IntervalSeconds': 30,
+                'MaxAttempts': 5,
+                'BackoffRate': 1.5
             }]
         )
 
         self.steps[f'{self.name}.{len(self.steps)+1}.choice'] = ChoiceState(
             Choices=[
                 {
-                    "Variable": "$.batch.status",
-                    "StringEquals": "FAILED",
-                    "Next": self.on_fail
+                    'Variable': '$.batch.status',
+                    'StringEquals': 'FAILED',
+                    'Next': self.on_fail
                 },
                 {
-                    "Variable": "$.batch.status",
-                    "StringEquals": "SUCCEEDED",
-                    "Next": self.Next
+                    'Variable': '$.batch.status',
+                    'StringEquals': 'SUCCEEDED',
+                    'Next': self.Next
                 }
             ],
             Default=self.on_fail
@@ -107,7 +113,7 @@ class Transform(State):
 
 
 class SNSTransform(Transform):
-    """docstring for ."""
+    '''docstring for .'''
     def __init__(self, TopicArn, Subject, Message, **kwargs):
         super(SNSTransform, self).__init__(**kwargs)
         self.TopicArn = TopicArn
@@ -134,7 +140,7 @@ class SNSTransform(Transform):
 
 
 class BatchTransform(Transform):
-    """docstring for ."""
+    '''docstring for .'''
     def __init__(self, job_queue, job_definition, parameters=None, **kwargs):
         super(BatchTransform, self).__init__(**kwargs)
         self.job_queue = job_queue
@@ -170,7 +176,7 @@ class BatchTransform(Transform):
 
 
 class GlueTransform(Transform):
-    """docstring for ."""
+    '''docstring for .'''
     def __init__(self, Jobname, Arguments=None, AllocatedCapacity=1, **kwargs):
         super(GlueTransform, self).__init__(**kwargs)
         self.Jobname = Jobname
@@ -204,12 +210,12 @@ class GlueTransform(Transform):
         return self.steps
 
 class QueryTransform(Transform):
-    """docstring for ."""
-    def __init__(self, QueryString, QueryExecutionContext=None, ResultConfiguration=None, **kwargs):
+    '''docstring for .'''
+    def __init__(self, QueryString, database, **kwargs):
         super(QueryTransform, self).__init__(**kwargs)
         self.QueryString = QueryString
-        self.QueryExecutionContext = QueryExecutionContext
-        self.ResultConfiguration = ResultConfiguration
+        self.QueryExecutionContext = {'Database': database}
+        self.ResultConfiguration = {'OutputLocation': self.out_path}
 
     def states(self):
         setup = {

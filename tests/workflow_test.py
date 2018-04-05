@@ -11,8 +11,14 @@ def test_workflow():
     workflow.addTransform(
         BatchTransform(
             name='example-batch-flow',
-            in_taxonomy=Taxonomy(id=int, name=str),
-            out_taxonomy=Taxonomy(name=str),
+            input_data={
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(id=int, name=str),
+                },
+            output_data={
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(name=str),
+                },
             job_queue='test-queue',
             job_definition='sap-job-execution',
             parameters={
@@ -26,8 +32,14 @@ def test_workflow():
     workflow.addTransform(
         GlueTransform(
             name='example-glue-job',
-            in_taxonomy=Taxonomy(name=str),
-            out_taxonomy=Taxonomy(name=str),
+            input_data={
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(name=str),
+                },
+            output_data={
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(id=int, name=str),
+                },
             Jobname='example-job-def',
             AllocatedCapacity=2
         )
