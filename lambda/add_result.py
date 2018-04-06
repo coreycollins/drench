@@ -10,7 +10,13 @@ def handler(event, context): # pylint:disable=unused-argument
     else:
         raise BaseException("No result payload sent")
 
-    resp = requests.put(f'http://drench-api-r53.tld/{payload.job_id}/steps', data=payload)
+    headers = {'x-drench-token': 'test_token'}
+
+    resp = requests.put(f'http://drench-api-r53.tld/{payload.job_id}/steps',
+                        data={'step':payload},
+                        headers=headers
+                       )
+
     if resp.status_code == requests.codes['ok']:
         return 'SUCCEEDED'
 
