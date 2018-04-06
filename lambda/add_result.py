@@ -12,7 +12,8 @@ def handler(event, context): # pylint:disable=unused-argument
 
     headers = {'x-drench-token': 'test_token'}
 
-    resp = requests.put(f'http://drench-api-r53.tld/{payload.job_id}/steps',
+    job_id = payload['step']['job_id']
+    resp = requests.put(f'https://api.drench.io/jobs/{job_id}/steps',
                         data=payload,
                         headers=headers
                        )
