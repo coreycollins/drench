@@ -71,12 +71,14 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
 
         self.steps[f'{self.name}.{len(self.steps)+1}.pass_params'] = PassState(
             Result={
-                'job_id': '1234', #TODO: ingest from first param
-                'name': self.name,
-                'output_path': self.out_path,
-                'output_taxonomy': self.out_taxonomy,
-                'step_type': task_type,
-                'state': f'$.{task_type}.status',
+                'step': {
+                    'job_id': '1234', #TODO: ingest from first param
+                    'name': self.name,
+                    'output_path': self.out_path,
+                    'output_taxonomy': self.out_taxonomy,
+                    'step_type': task_type,
+                    'state': f'$.{task_type}.status',
+                }
                 },
             ResultPath='$.payload',
             Next=f'{self.name}.{len(self.steps)+2}.add_result'

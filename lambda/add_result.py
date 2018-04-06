@@ -13,7 +13,7 @@ def handler(event, context): # pylint:disable=unused-argument
     headers = {'x-drench-token': 'test_token'}
 
     resp = requests.put(f'http://drench-api-r53.tld/{payload.job_id}/steps',
-                        data={'step':payload},
+                        data=payload,
                         headers=headers
                        )
 
