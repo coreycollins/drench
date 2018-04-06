@@ -1,22 +1,18 @@
 """taxonomy!"""
-from collections.abc import Mapping
 
-class Taxonomy(Mapping):
+TYPE_INDEX = {
+    "string": str,
+    "integer": int,
+    "boolean": bool
+}
+
+class Taxonomy(object):
     """file layout"""
-    def __init__(self, *args, **kw):
-        self._storage = dict(*args, **kw)
-    def __getitem__(self, key):
-        return self._storage[key]
-    def __iter__(self):
-        return iter(self._storage)
-    def __len__(self):
-        return len(self._storage)
-    def __str__(self):
-        return dict(self).__str__()
+    def __init__(self, format_type, fields):
+        self.format_type = format_type
+        self.fields = fields
 
-    def to_json(self):
-        '''make json.dumps-friendly dict'''
-        out_dict = {}
-        for key, val in self._storage.items():
-            out_dict[key] = val.__name__
-        return out_dict
+        for field in fields:
+            f_t = field['field_type']
+            if f_t not in TYPE_INDEX.keys():
+                raise BaseException(f'undefined field type {f_t}')

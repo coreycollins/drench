@@ -12,8 +12,26 @@ def test_tx_err():
         workflow.addTransform(
             BatchTransform(
                 name='example-batch-flow',
-                in_taxonomy=Taxonomy(id=int, name=str),
-                out_taxonomy=Taxonomy(id=int, name=str),
+                input_data={
+                    'path':'s3://some_bucket/pool_id/job_id',
+                    'taxonomy':Taxonomy(
+                        format_type='csv',
+                        fields=[
+                            {'name':'name', 'field_type':'string'},
+                            {'name':'id', 'field_type':'integer'}
+                        ]
+                        ),
+                    },
+                output_data={
+                    'path':'s3://some_bucket/pool_id/job_id',
+                    'taxonomy':Taxonomy(
+                        format_type='csv',
+                        fields=[
+                            {'name':'name', 'field_type':'string'},
+                            {'name':'id', 'field_type':'integer'}
+                        ]
+                        ),
+                },
                 job_queue='test-queue',
                 job_definition='sap-job-execution',
                 parameters={
@@ -27,8 +45,26 @@ def test_tx_err():
         workflow.addTransform(
             GlueTransform(
                 name='example-glue-job',
-                in_taxonomy=Taxonomy(name=str),
-                out_taxonomy=Taxonomy(name=str),
+                input_data={
+                    'path':'s3://some_bucket/pool_id/job_id',
+                    'taxonomy':Taxonomy(
+                        format_type='csv',
+                        fields=[
+                            {'name':'firm_name', 'field_type':'string'},
+                            {'name':'id', 'field_type':'integer'}
+                        ]
+                        ),
+                    },
+                output_data={
+                    'path':'s3://some_bucket/pool_id/job_id',
+                    'taxonomy':Taxonomy(
+                        format_type='csv',
+                        fields=[
+                            {'name':'name', 'field_type':'string'},
+                            {'name':'id', 'field_type':'integer'}
+                        ]
+                        ),
+                },
                 Jobname='example-job-def',
                 AllocatedCapacity=2
             )

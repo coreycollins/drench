@@ -64,7 +64,7 @@ class WorkFlow(object):
         """make sure tanonomies match"""
         for tf in self.transforms.values():
             if tf.Next and tf.Next != FINISH_END_NAME:
-                if tf.out_taxonomy != self.transforms[tf.Next].in_taxonomy:
+                if tf.out_taxonomy.fields != self.transforms[tf.Next].in_taxonomy.fields:
                     raise TaxonomyError(tf.out_taxonomy, self.transforms[tf.Next].in_taxonomy)
 
     def toJson(self):

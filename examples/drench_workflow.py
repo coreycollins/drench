@@ -12,7 +12,13 @@ def example_workflow():
             name='example-query-transform',
             output_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(id=int, name=str),
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             database='some_db',
             QueryString='SELECT id, name FROM some_table LIMIT 100;',
@@ -26,11 +32,23 @@ def example_workflow():
             name='example-batch-transform',
             input_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(id=int, name=str),
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             output_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(name=str),
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             job_queue='test-queue',
             job_definition='sap-job-execution',
@@ -46,11 +64,23 @@ def example_workflow():
             name='example-glue-transform',
             input_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(name=str),
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             output_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(id=int, name=str),
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             Jobname='example-job-def',
             AllocatedCapacity=2

@@ -13,11 +13,23 @@ def test_workflow():
             name='example-batch-flow',
             input_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(id=int, name=str),
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             output_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(name=str),
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             job_queue='test-queue',
             job_definition='sap-job-execution',
@@ -34,11 +46,23 @@ def test_workflow():
             name='example-glue-job',
             input_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(name=str),
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             output_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(id=int, name=str),
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             Jobname='example-job-def',
             AllocatedCapacity=2

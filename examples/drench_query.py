@@ -11,8 +11,14 @@ def example_workflow():
         QueryTransform(
             name='example-query-transform',
             output_data={
-                'path':'s3://temp.compass.com/testing/',
-                'taxonomy':Taxonomy(id=int, name=str),
+                'path':'s3://some_bucket/pool_id/job_id',
+                'taxonomy':Taxonomy(
+                    format_type='csv',
+                    fields=[
+                        {'name':'name', 'field_type':'string'},
+                        {'name':'id', 'field_type':'integer'}
+                    ]
+                    ),
                 },
             database='analytics',
             QueryString='SELECT companyname, naics FROM us_business LIMIT 100;',
