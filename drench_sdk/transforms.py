@@ -40,7 +40,7 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
         self.steps[f'{self.name}.{len(self.steps)+1}.check_{task_type}'] = TaskState(
             Resource=RESOURCES.get_arn('lambda', f'function:development-check_{task_type}'),
             Next=f'{self.name}.{len(self.steps)+2}.choice',
-            ResultPath='$.batch.status',
+            ResultPath=f'$.{task_type}.status',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
@@ -54,11 +54,11 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
                 {
                     'OR': [
                         {
-                            'Variable': '$.batch.status',
+                            'Variable': f'$.{task_type}.status',
                             'StringEquals': 'FAILED',
                         },
                         {
-                            'Variable': '$.batch.status',
+                            'Variable': f'$.{task_type}.status',
                             'StringEquals': 'SUCCEEDED',
                         }
                     ],
@@ -71,12 +71,12 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
 
         self.steps[f'{self.name}.{len(self.steps)+1}.pass_params'] = PassState(
             Result={
-                'pool_id': self.pool_id,
+                'job_id': '1234', #TODO: discuss where this comes from
                 'name': self.name,
                 'output_path': self.out_path,
                 'output_taxonomy': self.out_taxonomy,
-                'type': 'batch',
-                'state': '$.batch.status',
+                'type': task_type,
+                'state': f'$.{task_type}.status',
                 },
             ResultPath='$.payload',
             Next=f'{self.name}.{len(self.steps)+2}.add_result'
@@ -85,7 +85,7 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
         self.steps[f'{self.name}.{len(self.steps)+1}.add_result'] = TaskState(
             Resource=RESOURCES.get_arn('lambda', 'function:development-add_result'),
             Next=f'{self.name}.{len(self.steps)+2}.choice',
-            ResultPath='$.payload',
+            ResultPath='$.add_result.status',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
@@ -97,12 +97,12 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
         self.steps[f'{self.name}.{len(self.steps)+1}.choice'] = ChoiceState(
             Choices=[
                 {
-                    'Variable': '$.batch.status',
+                    'Variable': '$.add_result.status',
                     'StringEquals': 'FAILED',
                     'Next': self.on_fail
                 },
                 {
-                    'Variable': '$.batch.status',
+                    'Variable': '$.add_result.status',
                     'StringEquals': 'SUCCEEDED',
                     'Next': self.Next
                 }
