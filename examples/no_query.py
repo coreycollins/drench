@@ -7,16 +7,6 @@ def example_workflow():
     workflow = WorkFlow(pool_id=1234)
 
     workflow.addTransform(
-        QueryTransform(
-            name='example-query-transform',
-            database='some_db',
-            QueryString='SELECT id, name FROM some_table LIMIT 100;',
-            Next='example-batch-transform',
-            Start=True
-        )
-    )
-
-    workflow.addTransform(
         BatchTransform(
             name='example-batch-transform',
             job_queue='test-queue',

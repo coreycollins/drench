@@ -3,7 +3,7 @@
 #pylint: disable=invalid-name
 
 import json
-from drench_sdk.states import SucceedState, FailState
+from drench_sdk.states import SucceedState, FailState, ChoiceState
 
 FINISH_END_NAME = 'finish'
 FAILED_END_NAME = 'failed'
@@ -13,13 +13,13 @@ DO_NOT_DICT_ENCODE = ['str', 'int']
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self, pool_id=None, comment=None, timeout=None, version=None):
+    def __init__(self, pool_id, comment=None, timeout=None, version=None):
 
         self.pool_id = pool_id
 
-        self.transforms = {}
+        self.transforms = []
 
-        self.sfn = {}
+        self.sfn = {"StartAt": "check_job_id",}
 
         if comment:
             self.sfn['Comment'] = comment
@@ -35,18 +35,49 @@ class WorkFlow(object):
             FAILED_END_NAME: FailState(),
         }
 
+    def addCheckStates(self):
+        '''add initial states to fail if missing needed input'''
+
+        first_tr = self.transforms[0]
+        query_first = first_tr.type == 'query'
+
+        check_states = {
+            "check_job_id": ChoiceState(
+                Choices=[
+                    {
+                        'Variable': '$.job_id',
+                        'StringEquals': '',
+                        'Next': FAILED_END_NAME
+                    },
+                ],
+                Default=first_tr.name if query_first else 'check_input_path'
+            )
+        }
+
+        if not query_first:
+            check_states['check_input_path'] = ChoiceState(
+                Choices=[
+                    {
+                        'Variable': '$.input_path',
+                        'StringEquals': '',
+                        'Next': FAILED_END_NAME
+                    },
+                ],
+                Default=first_tr.name
+            )
+
+
+        self.sfn['States'] = {**self.sfn['States'], **check_states}
+
+
     def addTransform(self, transform):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
-        self.transforms[transform.name] = transform
-        transform.pool_id = self.pool_id
+        self.transforms.append(transform)
 
         if not transform.Next:
             transform.Next = FINISH_END_NAME
 
         transform.on_fail = FAILED_END_NAME
-
-        if transform.Start:
-            self.sfn['StartAt'] = transform.name
 
         self.sfn['States'] = {**self.sfn['States'], **transform.states()}
 
@@ -59,4 +90,5 @@ class WorkFlow(object):
             except AttributeError:
                 return dict((k, v) for k, v in obj.__dict__.items() if v)
 
+        self.addCheckStates()
         return json.dumps(self.sfn, default=encodeState, indent=4, sort_keys=True)

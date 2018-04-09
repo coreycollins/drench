@@ -10,12 +10,6 @@ def test_workflow():
     workflow.addTransform(
         BatchTransform(
             name='example-batch-flow',
-            input_data={
-                'path':'s3://some_bucket/pool_id/job_id',
-                },
-            output_data={
-                'path':'s3://some_bucket/pool_id/job_id',
-                },
             job_queue='test-queue',
             job_definition='sap-job-execution',
             parameters={
@@ -29,12 +23,6 @@ def test_workflow():
     workflow.addTransform(
         GlueTransform(
             name='example-glue-job',
-            input_data={
-                'path':'s3://some_bucket/pool_id/job_id',
-                },
-            output_data={
-                'path':'s3://some_bucket/pool_id/job_id',
-                },
             Jobname='example-job-def',
             AllocatedCapacity=2
         )

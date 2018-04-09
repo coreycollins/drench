@@ -9,9 +9,6 @@ def example_workflow():
     workflow.addTransform(
         QueryTransform(
             name='example-query-transform',
-            output_data={
-                'path':'s3://some_bucket/pool_id/job_id',
-                },
             database='analytics',
             QueryString='SELECT companyname, naics FROM us_business LIMIT 100;',
             Start=True

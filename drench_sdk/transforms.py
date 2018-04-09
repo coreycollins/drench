@@ -6,19 +6,19 @@ from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceStat
 #pylint:disable=invalid-name
 
 RESOURCES = Resources()
+RESULTS_BUCKET = 's3://io.drench.results'
 
 class Transform(State): #pylint:disable=too-many-instance-attributes
     '''docstring for Transform.'''
-    def __init__(self, name, output_data, input_data=None, on_fail=None, **kwargs):
+    def __init__(self, name, input_path=None, on_fail=None, **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
-        self.out_path = output_data['path']
 
-        if input_data:
-            self.in_path = input_data['path']
+        if input_path:
+            self.in_path = input_path
 
         self.on_fail = on_fail
-        self.pool_id = None # set by WorkFlow.addTransform
+        self.type = None # set by inheritor init
 
         self.steps = {}
 
@@ -26,19 +26,19 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
         '''compile and return all steps in the transform'''
         pass
 
-    def append_wait_result_choice(self, task_type, wait_seconds):
+    def append_wait_result_choice(self, wait_seconds):
         '''add consistent pattern after task states'''
 
         self.steps[f'{self.name}.{len(self.steps)+1}.wait'] = WaitState(
             Seconds=wait_seconds,
-            Next=f'{self.name}.{len(self.steps)+2}.check_{task_type}',
+            Next=f'{self.name}.{len(self.steps)+2}.check_{self.type}',
         )
 
 
-        self.steps[f'{self.name}.{len(self.steps)+1}.check_{task_type}'] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', f'function:development-check_{task_type}'),
+        self.steps[f'{self.name}.{len(self.steps)+1}.check_{self.type}'] = TaskState(
+            Resource=RESOURCES.get_arn('lambda', f'function:development-check_{self.type}'),
             Next=f'{self.name}.{len(self.steps)+2}.choice',
-            ResultPath=f'$.{task_type}.status',
+            ResultPath=f'$.{self.type}.status',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
@@ -52,11 +52,11 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
                 {
                     'OR': [
                         {
-                            'Variable': f'$.{task_type}.status',
+                            'Variable': f'$.{self.type}.status',
                             'StringEquals': 'FAILED',
                         },
                         {
-                            'Variable': f'$.{task_type}.status',
+                            'Variable': f'$.{self.type}.status',
                             'StringEquals': 'SUCCEEDED',
                         }
                     ],
@@ -70,11 +70,12 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
         self.steps[f'{self.name}.{len(self.steps)+1}.pass_params'] = PassState(
             Result={
                 'step': {
-                    'job_id': '1234', #TODO: ingest from first param
+                    'job_id': '$.job_id',
                     'name': self.name,
-                    'output_path': self.out_path,
-                    'step_type': task_type,
-                    'state': f'$.{task_type}.status',
+                    'output_path': f'read it from input somehow', #TODO figure this out
+                    # self.out_path = f'{RESULTS_BUCKET}/{self.job_id}/{self.name}/out.txt.gz'
+                    'step_type': self.type,
+                    'state': f'$.{self.type}.status',
                 }
                 },
             ResultPath='$.payload',
@@ -118,6 +119,7 @@ class SNSTransform(Transform):
         self.TopicArn = TopicArn
         self.Subject = Subject
         self.Message = Message
+        self.type = 'sns'
 
     def states(self):
         self.steps[self.name] = PassState(
@@ -145,6 +147,7 @@ class BatchTransform(Transform):
         self.job_queue = job_queue
         self.job_definition = job_definition
         self.parameters = parameters
+        self.type = 'batch'
 
     def states(self):
         setup = {
@@ -169,7 +172,7 @@ class BatchTransform(Transform):
             ResultPath='$.batch.jobId'
         )
 
-        self.append_wait_result_choice('batch', 180)
+        self.append_wait_result_choice(wait_seconds=180)
 
         return self.steps
 
@@ -181,6 +184,7 @@ class GlueTransform(Transform):
         self.Jobname = Jobname
         self.Arguments = Arguments
         self.AllocatedCapacity = AllocatedCapacity
+        self.type = 'glue'
 
     def states(self):
         setup = {
@@ -204,7 +208,7 @@ class GlueTransform(Transform):
             ResultPath='$.glue.runId'
         )
 
-        self.append_wait_result_choice('glue', 600)
+        self.append_wait_result_choice(wait_seconds=600)
 
         return self.steps
 
@@ -214,7 +218,8 @@ class QueryTransform(Transform):
         super(QueryTransform, self).__init__(**kwargs)
         self.QueryString = QueryString
         self.QueryExecutionContext = {'Database': database}
-        self.ResultConfiguration = {'OutputLocation': self.out_path}
+        self.ResultConfiguration = {'OutputLocation': 'gonna have to figure this out'} # TODO figure this out
+        self.type = 'query'
 
     def states(self):
         setup = {
@@ -235,6 +240,6 @@ class QueryTransform(Transform):
             ResultPath='$.query.QueryExecutionId'
         )
 
-        self.append_wait_result_choice('query', 30)
+        self.append_wait_result_choice(wait_seconds=30)
 
         return self.steps
