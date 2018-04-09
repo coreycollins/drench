@@ -1,7 +1,6 @@
 """example/test script for developing drench_sdk"""
 from drench_sdk.workflow import WorkFlow
 from drench_sdk.transforms import BatchTransform, GlueTransform, QueryTransform
-from drench_sdk.taxonomy import Taxonomy
 
 def example_workflow():
     """main func"""
@@ -12,13 +11,6 @@ def example_workflow():
             name='example-query-transform',
             output_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(
-                    format_type='csv',
-                    fields=[
-                        {'name':'name', 'field_type':'string'},
-                        {'name':'id', 'field_type':'integer'}
-                    ]
-                    ),
                 },
             database='some_db',
             QueryString='SELECT id, name FROM some_table LIMIT 100;',
@@ -32,23 +24,9 @@ def example_workflow():
             name='example-batch-transform',
             input_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(
-                    format_type='csv',
-                    fields=[
-                        {'name':'name', 'field_type':'string'},
-                        {'name':'id', 'field_type':'integer'}
-                    ]
-                    ),
                 },
             output_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(
-                    format_type='csv',
-                    fields=[
-                        {'name':'name', 'field_type':'string'},
-                        {'name':'id', 'field_type':'integer'}
-                    ]
-                    ),
                 },
             job_queue='test-queue',
             job_definition='sap-job-execution',
@@ -64,23 +42,9 @@ def example_workflow():
             name='example-glue-transform',
             input_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(
-                    format_type='csv',
-                    fields=[
-                        {'name':'name', 'field_type':'string'},
-                        {'name':'id', 'field_type':'integer'}
-                    ]
-                    ),
                 },
             output_data={
                 'path':'s3://some_bucket/pool_id/job_id',
-                'taxonomy':Taxonomy(
-                    format_type='csv',
-                    fields=[
-                        {'name':'name', 'field_type':'string'},
-                        {'name':'id', 'field_type':'integer'}
-                    ]
-                    ),
                 },
             Jobname='example-job-def',
             AllocatedCapacity=2

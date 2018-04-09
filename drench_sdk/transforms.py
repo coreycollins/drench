@@ -13,11 +13,9 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
         self.out_path = output_data['path']
-        self.out_taxonomy = output_data['taxonomy']
 
         if input_data:
             self.in_path = input_data['path']
-            self.in_taxonomy = input_data['taxonomy']
 
         self.on_fail = on_fail
         self.pool_id = None # set by WorkFlow.addTransform
@@ -75,7 +73,6 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
                     'job_id': '1234', #TODO: ingest from first param
                     'name': self.name,
                     'output_path': self.out_path,
-                    'output_taxonomy': self.out_taxonomy,
                     'step_type': task_type,
                     'state': f'$.{task_type}.status',
                 }

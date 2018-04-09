@@ -10,16 +10,6 @@ FAILED_END_NAME = 'failed'
 
 DO_NOT_DICT_ENCODE = ['str', 'int']
 
-class TaxonomyError(Exception):
-    """ error indicating non-matched taxonomies """
-    def __init__(self, taxonomy_one, taxonomy_two, **kwargs):
-        super(TaxonomyError, self).__init__(**kwargs)
-        self.taxonomy_one = taxonomy_one
-        self.taxonomy_two = taxonomy_two
-
-    def __str__(self):
-        return f'Taxonomies do not match:\n    {self.taxonomy_one!s}\n    {self.taxonomy_two!s}'
-
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
@@ -60,13 +50,6 @@ class WorkFlow(object):
 
         self.sfn['States'] = {**self.sfn['States'], **transform.states()}
 
-    def check_taxonomies(self):
-        """make sure tanonomies match"""
-        for tf in self.transforms.values():
-            if tf.Next and tf.Next != FINISH_END_NAME:
-                if tf.out_taxonomy.fields != self.transforms[tf.Next].in_taxonomy.fields:
-                    raise TaxonomyError(tf.out_taxonomy, self.transforms[tf.Next].in_taxonomy)
-
     def toJson(self):
         """dump Worktransform to AWS Step Function JSON"""
         def encodeState(obj):
@@ -75,7 +58,5 @@ class WorkFlow(object):
                 return obj.to_json()
             except AttributeError:
                 return dict((k, v) for k, v in obj.__dict__.items() if v)
-
-        self.check_taxonomies()
 
         return json.dumps(self.sfn, default=encodeState, indent=4, sort_keys=True)
