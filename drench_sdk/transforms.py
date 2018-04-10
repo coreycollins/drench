@@ -10,7 +10,7 @@ RESULTS_BUCKET = 's3://io.drench.results'
 
 class Transform(State): #pylint:disable=too-many-instance-attributes
     '''docstring for Transform.'''
-    def __init__(self, name, input_path=None, on_fail=None, **kwargs):
+    def __init__(self, name, task, input_path=None, on_fail=None, **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
 
@@ -18,7 +18,7 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
             self.in_path = input_path
 
         self.on_fail = on_fail
-        self.type = None # set by inheritor init
+        self.task = task
 
         self.steps = {}
 
@@ -31,14 +31,14 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
 
         self.steps[f'{self.name}.{len(self.steps)+1}.wait'] = WaitState(
             Seconds=wait_seconds,
-            Next=f'{self.name}.{len(self.steps)+2}.check_{self.type}',
+            Next=f'{self.name}.{len(self.steps)+2}.check_{self.task}',
         )
 
 
-        self.steps[f'{self.name}.{len(self.steps)+1}.check_{self.type}'] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', f'function:development-check_{self.type}'),
+        self.steps[f'{self.name}.{len(self.steps)+1}.check_{self.task}'] = TaskState(
+            Resource=RESOURCES.get_arn('lambda', f'function:development-check_{self.task}'),
             Next=f'{self.name}.{len(self.steps)+2}.choice',
-            ResultPath=f'$.{self.type}.status',
+            ResultPath=f'$.{self.task}.status',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
@@ -52,11 +52,11 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
                 {
                     'OR': [
                         {
-                            'Variable': f'$.{self.type}.status',
+                            'Variable': f'$.{self.task}.status',
                             'StringEquals': 'FAILED',
                         },
                         {
-                            'Variable': f'$.{self.type}.status',
+                            'Variable': f'$.{self.task}.status',
                             'StringEquals': 'SUCCEEDED',
                         }
                     ],
@@ -74,8 +74,8 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
                     'name': self.name,
                     'output_path': f'read it from input somehow', #TODO figure this out
                     # self.out_path = f'{RESULTS_BUCKET}/{self.job_id}/{self.name}/out.txt.gz'
-                    'step_type': self.type,
-                    'state': f'$.{self.type}.status',
+                    'step_type': self.task,
+                    'state': f'$.{self.task}.status',
                 }
                 },
             ResultPath='$.payload',
@@ -115,11 +115,10 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
 class SNSTransform(Transform):
     '''docstring for .'''
     def __init__(self, TopicArn, Subject, Message, **kwargs):
-        super(SNSTransform, self).__init__(**kwargs)
+        super(SNSTransform, self).__init__(task='sns', **kwargs)
         self.TopicArn = TopicArn
         self.Subject = Subject
         self.Message = Message
-        self.type = 'sns'
 
     def states(self):
         self.steps[self.name] = PassState(
@@ -139,15 +138,13 @@ class SNSTransform(Transform):
 
         return self.steps
 
-
 class BatchTransform(Transform):
     '''docstring for .'''
     def __init__(self, job_queue, job_definition, parameters=None, **kwargs):
-        super(BatchTransform, self).__init__(**kwargs)
+        super(BatchTransform, self).__init__(task='batch', **kwargs)
         self.job_queue = job_queue
         self.job_definition = job_definition
         self.parameters = parameters
-        self.type = 'batch'
 
     def states(self):
         setup = {
@@ -180,11 +177,10 @@ class BatchTransform(Transform):
 class GlueTransform(Transform):
     '''docstring for .'''
     def __init__(self, Jobname, Arguments=None, AllocatedCapacity=1, **kwargs):
-        super(GlueTransform, self).__init__(**kwargs)
+        super(GlueTransform, self).__init__(task='glue', **kwargs)
         self.Jobname = Jobname
         self.Arguments = Arguments
         self.AllocatedCapacity = AllocatedCapacity
-        self.type = 'glue'
 
     def states(self):
         setup = {
@@ -215,11 +211,10 @@ class GlueTransform(Transform):
 class QueryTransform(Transform):
     '''docstring for .'''
     def __init__(self, QueryString, database, **kwargs):
-        super(QueryTransform, self).__init__(**kwargs)
+        super(QueryTransform, self).__init__(task='query', **kwargs)
         self.QueryString = QueryString
         self.QueryExecutionContext = {'Database': database}
-        self.ResultConfiguration = {'OutputLocation': 'gonna have to figure this out'} # TODO figure this out
-        self.type = 'query'
+        self.ResultConfiguration = {'OutputLocation': ''} # TODO figure this out
 
     def states(self):
         setup = {
