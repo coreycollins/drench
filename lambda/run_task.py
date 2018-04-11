@@ -23,6 +23,7 @@ def handler(event, context): #pylint:disable=unused-argument
         except: #pylint:disable=bare-except
             pass
 
+    #FIXME case-switch support different resources (batch, athena, etc)
     client = boto3.client('glue', region_name='us-east-1')
     response = client.start_job_run(**event['next']['params'])
 

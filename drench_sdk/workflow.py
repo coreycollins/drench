@@ -8,8 +8,6 @@ from drench_sdk.states import SucceedState, FailState, ChoiceState
 FINISH_END_NAME = 'finish'
 FAILED_END_NAME = 'failed'
 
-DO_NOT_DICT_ENCODE = ['str', 'int']
-
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
@@ -39,7 +37,7 @@ class WorkFlow(object):
         '''add initial states to fail if missing needed input'''
 
         first_tr = self.transforms[0]
-        query_first = first_tr.type == 'query'
+        query_first = first_tr.task == 'query'
 
         check_states = {
             "check_job_id": ChoiceState(
@@ -50,15 +48,15 @@ class WorkFlow(object):
                         'Next': FAILED_END_NAME
                     },
                 ],
-                Default=first_tr.name if query_first else 'check_input_path'
+                Default=first_tr.name if query_first else 'check_in_path'
             )
         }
 
         if not query_first:
-            check_states['check_input_path'] = ChoiceState(
+            check_states['check_in_path'] = ChoiceState(
                 Choices=[
                     {
-                        'Variable': '$.input_path',
+                        'Variable': '$.next.in_path',
                         'StringEquals': '',
                         'Next': FAILED_END_NAME
                     },
