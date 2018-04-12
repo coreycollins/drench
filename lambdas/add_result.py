@@ -18,7 +18,7 @@ def handler(event, context): # pylint:disable=unused-argument
         'path': f'/jobs/{event["job_id"]}/steps'
     }
 
-    client = boto3.client('lambda')
+    client = boto3.client('lambda', region_name='us-east-1')
 
     client.invoke(
         FunctionName='arsa-drench-api:v1',
