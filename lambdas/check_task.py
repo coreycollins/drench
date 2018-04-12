@@ -1,10 +1,6 @@
 ''' check the status of an aws task by run id and return it '''
 import boto3
 
-PASS = 'pass'
-FAIL = 'fail'
-LIVE = 'running'
-
 STATUS_INDEX = {
     'SUCCEEDED': 'pass',
 
