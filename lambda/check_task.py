@@ -13,5 +13,6 @@ def handler(event, context): #pylint:disable=unused-argument
         'name': event['next']['name'],
         'out_path': event['next']['out_path'],
         'content_type': event['next']['content_type'],
+        'report': event['next']['report'],
         'status': status
     }
