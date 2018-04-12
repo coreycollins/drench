@@ -6,10 +6,9 @@ RESOURCES = Resources()
 
 class Transform(State):
     '''docstring for Transform.'''
-    def __init__(self, name, task, report=False, **kwargs):
+    def __init__(self, name, report=False, **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
-        self.task = task
         self.report = report
 
         # defaults to be over-ridden
@@ -62,11 +61,11 @@ class Transform(State):
                 {
                     'OR': [
                         {
-                            'Variable': f'$.{self.task}.status',
+                            'Variable': f'$.result.status',
                             'StringEquals': 'FAILED',
                         },
                         {
-                            'Variable': f'$.{self.task}.status',
+                            'Variable': f'$.result.status',
                             'StringEquals': 'SUCCEEDED',
                         }
                     ],
@@ -104,7 +103,7 @@ class Transform(State):
 #class SNSTransform(Transform):
 #    '''docstring for .'''
 #    def __init__(self, TopicArn, Subject, Message, **kwargs):
-#        super(SNSTransform, self).__init__(task='sns', **kwargs)
+#        super(SNSTransform, self).__init__( **kwargs)
 #        self.TopicArn = TopicArn
 #        self.Subject = Subject
 #        self.Message = Message
@@ -130,7 +129,7 @@ class Transform(State):
 #class BatchTransform(Transform):
 #    '''docstring for .'''
 #    def __init__(self, job_queue, job_definition, parameters=None, **kwargs):
-#        super(BatchTransform, self).__init__(task='batch', **kwargs)
+#        super(BatchTransform, self).__init__(**kwargs)
 #        self.job_queue = job_queue
 #        self.job_definition = job_definition
 #        self.parameters = parameters
@@ -166,7 +165,7 @@ class Transform(State):
 class GlueTransform(Transform):
     '''docstring for .'''
     def __init__(self, job_name, arguments=None, allocated_capacity=1, **kwargs):
-        super(GlueTransform, self).__init__(task='glue', **kwargs)
+        super(GlueTransform, self).__init__(**kwargs)
         self.job_name = job_name
         self.arguments = arguments
         self.allocated_capacity = allocated_capacity
@@ -174,7 +173,7 @@ class GlueTransform(Transform):
     def setup(self):
         setup = {
             'name': self.name,
-            'type': self.task,
+            'type': 'glue',
             'params': {
                 'JobName': self.job_name,
                 'Allocated_capacity': self.allocated_capacity
@@ -196,7 +195,7 @@ class GlueTransform(Transform):
 #class QueryTransform(Transform):
 #    '''docstring for .'''
 #    def __init__(self, QueryString, database, **kwargs):
-#        super(QueryTransform, self).__init__(task='query', **kwargs)
+#        super(QueryTransform, self).__init__(**kwargs)
 #        self.QueryString = QueryString
 #        self.QueryExecutionContext = {'Database': database}
 #        self.ResultConfiguration = {'OutputLocation': ''}
