@@ -27,7 +27,7 @@ class WorkFlow(object):
         self.sfn['States'] = {
             UPDATE_END_NAME: TaskState(
                 Resource=Resources.get_arn('lambda', f'function:drench_sdk_update_job'),
-                End=CHOICE_END_NAME,
+                Next=CHOICE_END_NAME,
                 Retry=[{
                     'ErrorEquals': ['Lambda.Unknown'],
                     'IntervalSeconds': 30,

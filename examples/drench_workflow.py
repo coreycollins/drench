@@ -4,14 +4,14 @@ from drench_sdk.transforms import BatchTransform, GlueTransform, QueryTransform
 
 def example_workflow():
     """main func"""
-    workflow = WorkFlow(pool_id=1234)
+    workflow = WorkFlow()
 
     workflow.add_transform(
         QueryTransform(
             name='example-query-transform',
             database='some_db',
             query_string='SELECT id, name FROM some_table LIMIT 100;',
-            run_next='example-batch-transform',
+            Next='example-batch-transform',
             Start=True
         )
     )
@@ -22,9 +22,9 @@ def example_workflow():
             job_queue='test-queue',
             job_definition='sap-job-execution',
             parameters={
-                'job': '$.params.job'
+                '--flag': 'some-value'
             },
-            run_next='example-glue-transform',
+            Next='example-glue-transform',
         )
     )
 
@@ -33,6 +33,9 @@ def example_workflow():
             name='example-glue-transform',
             job_name='example-job-def',
             allocated_capacity=2,
+            arguments={
+                '--command-line-switch': True
+            }
         )
     )
 
