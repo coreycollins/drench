@@ -38,7 +38,7 @@ class Transform(State):
         )
 
         self.steps[f'{self.name}.2.run'] = TaskState(
-            Resource=self.resources.get_arn('lambda', 'function:development-run_task'),
+            Resource=self.resources.get_arn('lambda', 'function:drench_sdk_run_task'),
             Next=f'{self.name}.3.wait',
             ResultPath='$'
         )
@@ -50,7 +50,7 @@ class Transform(State):
 
 
         self.steps[f'{self.name}.4.check'] = TaskState(
-            Resource=self.resources.get_arn('lambda', f'function:development-check_task'),
+            Resource=self.resources.get_arn('lambda', f'function:drench_sdk_check_task'),
             Next=f'{self.name}.5.choice',
             ResultPath=f'$.result',
             Retry=[{
@@ -82,7 +82,7 @@ class Transform(State):
         )
 
         self.steps[f'{self.name}.6.add_result'] = TaskState(
-            Resource=self.resources.get_arn('lambda', 'function:development-add_result'),
+            Resource=self.resources.get_arn('lambda', 'function:drench_sdk_add_result'),
             Next=self.Next,
             ResultPath='$.add_result.status',
             Retry=[{
