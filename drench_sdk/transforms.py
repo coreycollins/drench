@@ -2,23 +2,20 @@
 from drench_sdk.resources import Resources
 from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceState
 
-#pylint:disable=too-few-public-methods
-#pylint:disable=invalid-name
-
 RESOURCES = Resources()
 
-class Transform(State): #pylint:disable=too-many-instance-attributes
+class Transform(State):
     '''docstring for Transform.'''
-    def __init__(self, name, task, input_path=None, on_fail=None, **kwargs):
+    def __init__(self, name, task, report=False, **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
-
-        if input_path:
-            self.in_path = input_path
-
-        self.on_fail = on_fail
-        self.wait_seconds = 60 #default to be over-ridden
         self.task = task
+        self.report = report
+
+        # defaults to be over-ridden
+        self.wait_seconds = 60
+        self.on_fail = None
+        self.next = None
 
         self.steps = {}
 
@@ -91,6 +88,16 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
                 'BackoffRate': 1.5
             }]
         )
+        self.steps[f'{self.name}.5.choice'] = ChoiceState(
+            Choices=[
+                {
+                    'Variable': f'$.result.status',
+                    'StringEquals': 'SUCCEEDED',
+                    'Next': self.next
+                }
+            ],
+            Default=self.on_fail
+            )
 
         return self.steps
 
@@ -158,29 +165,30 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
 
 class GlueTransform(Transform):
     '''docstring for .'''
-    def __init__(self, Jobname, Arguments=None, AllocatedCapacity=1, **kwargs):
+    def __init__(self, job_name, arguments=None, allocated_capacity=1, **kwargs):
         super(GlueTransform, self).__init__(task='glue', **kwargs)
-        self.Jobname = Jobname
-        self.Arguments = Arguments
-        self.AllocatedCapacity = AllocatedCapacity
+        self.job_name = job_name
+        self.arguments = arguments
+        self.allocated_capacity = allocated_capacity
 
     def setup(self):
         setup = {
             'name': self.name,
             'type': self.task,
             'params': {
-                'JobName': self.Jobname,
-                'AllocatedCapacity': self.AllocatedCapacity
-            }
+                'JobName': self.job_name,
+                'Allocated_capacity': self.allocated_capacity
+            },
+            'report': self.report
         }
 
-        setup['params']['Arguments'] = {
+        setup['params']['arguments'] = {
             '--in_path':'$.next.in_path',
             '--out_path':'$.next.out_path'
         }
 
-        if self.Arguments:
-            setup['params']['Arguments'] = {**setup['params']['Arguments'], **self.Arguments}
+        if self.arguments:
+            setup['params']['Arguments'] = {**setup['params']['Arguments'], **self.arguments}
 
         return setup
 
