@@ -19,7 +19,7 @@ def handler(event, context): # pylint:disable=unused-argument
         'queryStringParameters': {},
         'headers': {},
         'httpMethod': 'PUT',
-        'path': '/jobs/{event["job_id"]}/steps'
+        'path': f'/jobs/{event["job_id"]}/steps'
     }
 
     client = boto3.client('lambda')
