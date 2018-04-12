@@ -1,20 +1,19 @@
 '''workflows: chained and orchestrated sets of transforms'''
 
 import json
-from drench_sdk.states import SucceedState, FailState, ChoiceState
+from drench_sdk.states import SucceedState, FailState, TaskState, ChoiceState
+from drench_sdk.resources import Resources
 
-FINISH_END_NAME = 'finish'
-FAILED_END_NAME = 'failed'
+UPDATE_END_NAME = '__update'
+CHOICE_END_NAME = '__choice'
+FINISH_END_NAME = '__finish'
+FAILED_END_NAME = '__failed'
 
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self, pool_id, comment=None, timeout=None, version=None):
-
-        self.pool_id = pool_id
-
-        self.sfn = {"StartAt": "check_job_id",}
-        self.first_transform = None
+    def __init__(self, comment=None, timeout=None, version=None):
+        self.sfn = {}
 
         if comment:
             self.sfn['Comment'] = comment
@@ -26,40 +25,43 @@ class WorkFlow(object):
             self.sfn['Version'] = version
 
         self.sfn['States'] = {
+            UPDATE_END_NAME: TaskState(
+                Resource=Resources.get_arn('lambda', f'function:drench_sdk_update_job'),
+                End=CHOICE_END_NAME,
+                Retry=[{
+                    'ErrorEquals': ['Lambda.Unknown'],
+                    'IntervalSeconds': 30,
+                    'MaxAttempts': 5,
+                    'BackoffRate': 1.5
+                }]
+            ),
+            CHOICE_END_NAME: ChoiceState(
+                Choices=[
+                    {
+                        'Variable': f'$.result.status',
+                        'StringEquals': 'pass',
+                        'Next': FINISH_END_NAME
+                    }
+                ],
+                Default=FAILED_END_NAME
+            ),
             FINISH_END_NAME: SucceedState(),
             FAILED_END_NAME: FailState(),
         }
 
-    def add_check_states(self):
-        '''add initial states to fail if missing needed input'''
-
-        check_states = {
-            "check_job_id": ChoiceState(
-                Choices=[
-                    {
-                        'Variable': '$.job_id',
-                        'StringEquals': '',
-                        'Next': FAILED_END_NAME
-                    },
-                ],
-                Default=self.first_transform
-            )
-        }
-
-        self.sfn['States'] = {**self.sfn['States'], **check_states}
-
-
     def add_transform(self, transform):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
 
-        if not self.first_transform:
-            self.first_transform = transform.name
+        if transform.name in [UPDATE_END_NAME, CHOICE_END_NAME, FINISH_END_NAME, FAILED_END_NAME]:
+            raise Exception(f'The transform name {transform.name} is reserved')
 
+        if not transform.Next:
+            transform.Next = UPDATE_END_NAME
 
-        if not transform.run_next:
-            transform.run_next = FINISH_END_NAME
+        transform._on_fail = UPDATE_END_NAME #pylint:disable=W0212
 
-        transform.on_fail = FAILED_END_NAME
+        if 'StartAt' not in self.sfn:
+            self.sfn['StartAt'] = transform.name
 
         self.sfn['States'] = {**self.sfn['States'], **transform.states()}
 
@@ -72,5 +74,4 @@ class WorkFlow(object):
             except AttributeError:
                 return dict((k, v) for k, v in obj.__dict__.items() if v)
 
-        self.add_check_states()
         return json.dumps(self.sfn, default=encode_state, indent=4, sort_keys=True)

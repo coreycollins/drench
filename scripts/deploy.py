@@ -10,7 +10,7 @@ import boto3
 
 def main():
     """ main method """
-    lambda_path = os.path.join(os.curdir, 'lambda')
+    lambda_path = os.path.join(os.curdir, 'lambdas')
     build_path = os.path.join(os.curdir, '.build')
 
     if os.path.exists(build_path):

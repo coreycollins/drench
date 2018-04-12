@@ -4,53 +4,53 @@ from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceStat
 
 class Transform(State):
     '''docstring for Transform.'''
-    def __init__(self, name, run_next=None, report=False, **kwargs):
+    def __init__(self,
+                 name,
+                 report_url=None,
+                 content_type='application/text',
+                 **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
-        self.report = report
-
-        self.resources = Resources()
+        self.report_url = report_url
+        self.content_type = content_type
 
         # defaults to be over-ridden
-        self.wait_seconds = 0
-        self.on_fail = None
-        self.run_next = run_next
-
-        self.steps = {}
+        self._wait_seconds = 0
+        self._on_fail = None
 
     def setup(self):
         '''build $.next'''
         setup = {
             'name': self.name,
-            'report': self.report,
-            'account_id': self.resources.get_account()
+            'content_type': self.content_type,
+            'report_url': self.report_url
         }
         return setup
 
     def states(self):
         '''compile and return all steps in the transform'''
-        self.steps = {}
+        steps = {}
 
-        self.steps[f'{self.name}'] = PassState(
+        steps[f'{self.name}'] = PassState(
             Result=self.setup(),
             ResultPath='$.next',
             Next=f'{self.name}.2.run'
         )
 
-        self.steps[f'{self.name}.2.run'] = TaskState(
-            Resource=self.resources.get_arn('lambda', 'function:drench_sdk_run_task'),
+        steps[f'{self.name}.2.run'] = TaskState(
+            Resource=Resources.get_arn('lambda', 'function:drench_sdk_run_task'),
             Next=f'{self.name}.3.wait',
             ResultPath='$'
         )
 
-        self.steps[f'{self.name}.3.wait'] = WaitState(
-            Seconds=self.wait_seconds,
+        steps[f'{self.name}.3.wait'] = WaitState(
+            Seconds=self._wait_seconds,
             Next=f'{self.name}.4.check',
         )
 
 
-        self.steps[f'{self.name}.4.check'] = TaskState(
-            Resource=self.resources.get_arn('lambda', f'function:drench_sdk_check_task'),
+        steps[f'{self.name}.4.check'] = TaskState(
+            Resource=Resources.get_arn('lambda', f'function:drench_sdk_check_task'),
             Next=f'{self.name}.5.choice',
             ResultPath=f'$.result',
             Retry=[{
@@ -61,30 +61,29 @@ class Transform(State):
             }]
         )
 
-        self.steps[f'{self.name}.5.choice'] = ChoiceState(
+        steps[f'{self.name}.5.choice'] = ChoiceState(
             Choices=[
                 {
                     'OR': [
                         {
                             'Variable': f'$.result.status',
-                            'StringEquals': 'FAILED',
+                            'StringEquals': 'fail',
                         },
                         {
                             'Variable': f'$.result.status',
-                            'StringEquals': 'SUCCEEDED',
+                            'StringEquals': 'pass',
                         }
                     ],
 
                     'Next': f'{self.name}.6.add_result'
                 }
             ],
-            Default=f'{self.name}.{len(self.steps)-1}.wait'
+            Default=f'{self.name}.3.wait'
         )
 
-        self.steps[f'{self.name}.6.add_result'] = TaskState(
-            Resource=self.resources.get_arn('lambda', 'function:development-add_result'),
+        steps[f'{self.name}.6.add_result'] = TaskState(
+            Resource=Resources.get_arn('lambda', 'function:drench_sdk_add_result'),
             Next=f'{self.name}.7.choice',
-            ResultPath='$.add_result.status',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
@@ -92,18 +91,18 @@ class Transform(State):
                 'BackoffRate': 1.5
             }]
         )
-        self.steps[f'{self.name}.7.choice'] = ChoiceState(
+        steps[f'{self.name}.7.choice'] = ChoiceState(
             Choices=[
                 {
                     'Variable': f'$.result.status',
-                    'StringEquals': 'SUCCEEDED',
-                    'Next': self.run_next
+                    'StringEquals': 'pass',
+                    'Next': self.Next
                 }
             ],
-            Default=self.on_fail
+            Default=self._on_fail
             )
 
-        return self.steps
+        return steps
 
 class BatchTransform(Transform):
     '''docstring for .'''
@@ -112,7 +111,7 @@ class BatchTransform(Transform):
         self.job_queue = job_queue
         self.job_definition = job_definition
         self.parameters = parameters
-        self.wait_seconds = 300
+        self._wait_seconds = 60
 
     def setup(self):
         setup = super(BatchTransform, self).setup()
@@ -120,12 +119,11 @@ class BatchTransform(Transform):
         setup['params'] = {
             'jobname': self.name,
             'jobQueue':self.job_queue,
-            'jobDefinition': self.job_definition
-        }
-
-        setup['params']['parameters'] = {
-            '--in_path':'$.next.in_path',
-            '--out_path':'$.next.out_path'
+            'jobDefinition': self.job_definition,
+            'parameters': {
+                '--in_path':'$.next.in_path',
+                '--out_path':'$.next.out_path'
+            }
         }
 
         if self.parameters:
@@ -140,19 +138,18 @@ class GlueTransform(Transform):
         self.job_name = job_name
         self.arguments = arguments
         self.allocated_capacity = allocated_capacity
-        self.wait_seconds = 600
+        self._wait_seconds = 60
 
     def setup(self):
         setup = super(GlueTransform, self).setup()
         setup['type'] = 'glue'
         setup['params'] = {
             'JobName': self.job_name,
-            'AllocatedCapacity': self.allocated_capacity
-        }
-
-        setup['params']['arguments'] = {
-            '--in_path':'$.next.in_path',
-            '--out_path':'$.next.out_path'
+            'AllocatedCapacity': self.allocated_capacity,
+            'Arguments': {
+                '--in_path':'$.next.in_path',
+                '--out_path':'$.next.out_path'
+            }
         }
 
         if self.arguments:
@@ -166,17 +163,20 @@ class QueryTransform(Transform):
     def __init__(self, query_string, database, **kwargs):
         super(QueryTransform, self).__init__(**kwargs)
         self.query_string = query_string
-        self.query_execution_context = {'Database': database}
-        self.result_configuration = {'OutputLocation': '$.next.out_path'}
-        self.wait_seconds = 30
+        self.database = database
+        self._wait_seconds = 30
 
     def setup(self):
         setup = super(QueryTransform, self).setup()
         setup['type'] = 'query'
         setup['params'] = {
             'QueryString': self.query_string,
-            'QueryExecutionContext': self.query_execution_context,
-            'ResultConfiguration': self.result_configuration
+            'QueryExecutionContext': {
+                'Database': self.database
+            },
+            'ResultConfiguration': {
+                'OutputLocation': '$.next.out_path'
+            }
         }
 
         return setup
