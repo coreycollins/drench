@@ -17,19 +17,33 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
             self.in_path = input_path
 
         self.on_fail = on_fail
+        self.wait_seconds = 60 #default to be over-ridden
         self.task = task
 
         self.steps = {}
 
-    def states(self):
-        '''compile and return all steps in the transform'''
+    def setup(self):
+        '''placeholder for inheritor classes to populate'''
         pass
 
-    def append_wait_result_choice(self, wait_seconds):
-        '''add consistent pattern after task states'''
+    def states(self):
+        '''compile and return all steps in the transform'''
+        self.steps = {}
+
+        self.steps[self.name] = PassState(
+            Result=self.setup(),
+            ResultPath='$.next',
+            Next='%s.2.run' % self.name
+        )
+
+        self.steps['%s.2.run' % self.name] = TaskState(
+            Resource=RESOURCES.get_arn('lambda', 'function:development-run_task'),
+            Next='%s.3.wait' % self.name,
+            ResultPath='$'
+        )
 
         self.steps[f'{self.name}.{len(self.steps)+1}.wait'] = WaitState(
-            Seconds=wait_seconds,
+            Seconds=self.wait_seconds,
             Next=f'{self.name}.{len(self.steps)+2}.check_{self.task}',
         )
 
@@ -78,31 +92,33 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
             }]
         )
 
-class SNSTransform(Transform):
-    '''docstring for .'''
-    def __init__(self, TopicArn, Subject, Message, **kwargs):
-        super(SNSTransform, self).__init__(task='sns', **kwargs)
-        self.TopicArn = TopicArn
-        self.Subject = Subject
-        self.Message = Message
-
-    def states(self):
-        self.steps[self.name] = PassState(
-            Next='%s.2.send' % self.name,
-            Result={
-                'arn': self.TopicArn,
-                'subject': self.Subject,
-                'message': self.Message
-            },
-            ResultPath='$.sns'
-        )
-
-        self.steps['%s.2.send' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function:send_sns'),
-            Next=self.Next
-        )
-
         return self.steps
+
+#class SNSTransform(Transform):
+#    '''docstring for .'''
+#    def __init__(self, TopicArn, Subject, Message, **kwargs):
+#        super(SNSTransform, self).__init__(task='sns', **kwargs)
+#        self.TopicArn = TopicArn
+#        self.Subject = Subject
+#        self.Message = Message
+#
+#    def states(self):
+#        self.steps[self.name] = PassState(
+#            Next='%s.2.send' % self.name,
+#            Result={
+#                'arn': self.TopicArn,
+#                'subject': self.Subject,
+#                'message': self.Message
+#            },
+#            ResultPath='$.sns'
+#        )
+#
+#        self.steps['%s.2.send' % self.name] = TaskState(
+#            Resource=RESOURCES.get_arn('lambda', 'function:send_sns'),
+#            Next=self.Next
+#        )
+#
+#        return self.steps
 
 #class BatchTransform(Transform):
 #    '''docstring for .'''
@@ -148,7 +164,7 @@ class GlueTransform(Transform):
         self.Arguments = Arguments
         self.AllocatedCapacity = AllocatedCapacity
 
-    def states(self):
+    def setup(self):
         setup = {
             'name': self.name,
             'type': self.task,
@@ -166,23 +182,8 @@ class GlueTransform(Transform):
         if self.Arguments:
             setup['params']['Arguments'] = {**setup['params']['Arguments'], **self.Arguments}
 
-        self.steps = {}
+        return setup
 
-        self.steps[self.name] = PassState(
-            Result=setup,
-            ResultPath='$.next',
-            Next='%s.2.run' % self.name
-        )
-
-        self.steps['%s.2.run' % self.name] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function:development-run_task'),
-            Next='%s.3.wait' % self.name,
-            ResultPath='$'
-        )
-
-        self.append_wait_result_choice(wait_seconds=600)
-
-        return self.steps
 
 #class QueryTransform(Transform):
 #    '''docstring for .'''
