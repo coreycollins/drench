@@ -9,7 +9,7 @@ jobs:
       - checkout
       - run:
           name: Keyscan Github (HACK)
-          command: ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          command: ssh-keyscan -H github.com >> ~/.ssh/config
       - run:
           name: install dependencies
           command: |
