@@ -6,7 +6,7 @@ def example_workflow():
     """main func"""
     workflow = WorkFlow(pool_id=1234)
 
-    workflow.addTransform(
+    workflow.add_transform(
         QueryTransform(
             name='example-query-transform',
             database='analytics',
@@ -15,7 +15,7 @@ def example_workflow():
         )
     )
 
-    print(workflow.toJson())
+    print(workflow.to_json())
 
 if __name__ == '__main__':
     example_workflow()

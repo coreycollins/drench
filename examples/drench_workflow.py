@@ -7,7 +7,7 @@ def example_workflow():
     """main func"""
     workflow = WorkFlow(pool_id=1234)
 
-    #workflow.addTransform(
+    #workflow.add_transform(
     #    QueryTransform(
     #        name='example-query-transform',
     #        database='some_db',
@@ -17,7 +17,7 @@ def example_workflow():
     #    )
     #)
 
-    #workflow.addTransform(
+    #workflow.add_transform(
     #    BatchTransform(
     #        name='example-batch-transform',
     #        job_queue='test-queue',
@@ -29,7 +29,7 @@ def example_workflow():
     #    )
     #)
 
-    workflow.addTransform(
+    workflow.add_transform(
         GlueTransform(
             name='example-glue-transform',
             job_name='example-job-def',
@@ -37,7 +37,7 @@ def example_workflow():
         )
     )
 
-    print(workflow.toJson())
+    print(workflow.to_json())
 
 if __name__ == '__main__':
     example_workflow()

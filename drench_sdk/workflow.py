@@ -1,6 +1,4 @@
 '''workflows: chained and orchestrated sets of transforms'''
-#violate pep8 so workflows can dump AWS-friendly JSON
-#pylint: disable=invalid-name
 
 import json
 from drench_sdk.states import SucceedState, FailState, ChoiceState
@@ -33,7 +31,7 @@ class WorkFlow(object):
             FAILED_END_NAME: FailState(),
         }
 
-    def addCheckStates(self):
+    def add_check_states(self):
         '''add initial states to fail if missing needed input'''
 
         first_tr = self.transforms[0]
@@ -68,7 +66,7 @@ class WorkFlow(object):
         self.sfn['States'] = {**self.sfn['States'], **check_states}
 
 
-    def addTransform(self, transform):
+    def add_transform(self, transform):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
         self.transforms.append(transform)
 
@@ -79,14 +77,14 @@ class WorkFlow(object):
 
         self.sfn['States'] = {**self.sfn['States'], **transform.states()}
 
-    def toJson(self):
+    def to_json(self):
         """dump Worktransform to AWS Step Function JSON"""
-        def encodeState(obj):
+        def encode_state(obj):
             """coerce object into dicts"""
             try:
                 return obj.to_json()
             except AttributeError:
                 return dict((k, v) for k, v in obj.__dict__.items() if v)
 
-        self.addCheckStates()
-        return json.dumps(self.sfn, default=encodeState, indent=4, sort_keys=True)
+        self.add_check_states()
+        return json.dumps(self.sfn, default=encode_state, indent=4, sort_keys=True)
