@@ -1,8 +1,9 @@
 '''workflows: chained and orchestrated sets of transforms'''
 
 import json
+
+from drench_resources import get_arn
 from drench_sdk.states import SucceedState, FailState, TaskState, ChoiceState
-from drench_sdk.resources import Resources
 
 UPDATE_END_NAME = '__update'
 CHOICE_END_NAME = '__choice'
@@ -12,8 +13,9 @@ FAILED_END_NAME = '__failed'
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self, comment=None, timeout=None, version=None):
+    def __init__(self, account_id, comment=None, timeout=None, version=None):
         self.sfn = {}
+        self.account_id = account_id
 
         if comment:
             self.sfn['Comment'] = comment
@@ -26,7 +28,7 @@ class WorkFlow(object):
 
         self.sfn['States'] = {
             UPDATE_END_NAME: TaskState(
-                Resource=Resources.get_arn('lambda', f'function:drench_sdk_update_job'),
+                Resource=get_arn('lambda', f'function:drench_sdk_update_job', self.account_id),
                 Next=CHOICE_END_NAME,
                 Retry=[{
                     'ErrorEquals': ['Lambda.Unknown'],
@@ -63,7 +65,7 @@ class WorkFlow(object):
         if 'StartAt' not in self.sfn:
             self.sfn['StartAt'] = transform.name
 
-        self.sfn['States'] = {**self.sfn['States'], **transform.states()}
+        self.sfn['States'] = {**self.sfn['States'], **transform.states(self.account_id)}
 
     def to_json(self):
         """dump Worktransform to AWS Step Function JSON"""

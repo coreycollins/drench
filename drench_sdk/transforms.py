@@ -1,5 +1,5 @@
 '''flows are fucntion-like packages of states'''
-from drench_sdk.resources import Resources
+from drench_resources import get_arn
 from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceState
 
 class Transform(State):
@@ -27,7 +27,7 @@ class Transform(State):
         }
         return setup
 
-    def states(self):
+    def states(self, account_id):
         '''compile and return all steps in the transform'''
         steps = {}
 
@@ -38,7 +38,7 @@ class Transform(State):
         )
 
         steps[f'{self.name}.2.run'] = TaskState(
-            Resource=Resources.get_arn('lambda', 'function:drench_sdk_run_task'),
+            Resource=get_arn('lambda', 'function:drench_sdk_run_task', account_id),
             Next=f'{self.name}.3.wait',
             ResultPath='$'
         )
@@ -50,7 +50,7 @@ class Transform(State):
 
 
         steps[f'{self.name}.4.check'] = TaskState(
-            Resource=Resources.get_arn('lambda', f'function:drench_sdk_check_task'),
+            Resource=get_arn('lambda', f'function:drench_sdk_check_task', account_id),
             Next=f'{self.name}.5.choice',
             ResultPath=f'$.result',
             Retry=[{
@@ -82,7 +82,7 @@ class Transform(State):
         )
 
         steps[f'{self.name}.6.add_result'] = TaskState(
-            Resource=Resources.get_arn('lambda', 'function:drench_sdk_add_result'),
+            Resource=get_arn('lambda', 'function:drench_sdk_add_result', account_id),
             Next=f'{self.name}.7.choice',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
