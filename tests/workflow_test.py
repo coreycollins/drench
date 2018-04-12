@@ -1,35 +1,30 @@
-"""example/test script for developing drench_sdk"""
+#pylint:disable=missing-docstring
 import json
 from drench_sdk.workflow import WorkFlow
-from drench_sdk.transforms import BatchTransform, GlueTransform
+from drench_sdk.transforms import GlueTransform
 
 def test_workflow():
     """main func"""
-    # workflow = WorkFlow(pool_id=1234)
-    #
-    # workflow.addTransform(
-    #     BatchTransform(
-    #         name='example-batch-flow',
-    #         job_queue='test-queue',
-    #         job_definition='sap-job-execution',
-    #         parameters={
-    #             'job': '$.params.job'
-    #         },
-    #         Next='example-glue-job',
-    #         Start=True
-    #     )
-    # )
-    #
-    # workflow.addTransform(
-    #     GlueTransform(
-    #         name='example-glue-job',
-    #         Jobname='example-job-def',
-    #         AllocatedCapacity=2
-    #     )
-    # )
-    #
-    # correct_sfn = ''
-    # with open('tests/correct.json') as file_handle:
-    #     correct_sfn = file_handle.read()
-    #
-    # assert json.loads(workflow.toJson()) == json.loads(correct_sfn)
+    workflow = WorkFlow(comment='test', timeout=60, version=1.1)
+
+    assert len(workflow.sfn['States']) == 4
+
+def test_add_transform():
+    workflow = WorkFlow(comment='test', timeout=60, version=1.1)
+    workflow.add_transform(
+        GlueTransform(
+            name='example-glue-job',
+            job_name='example-job-def',
+            allocated_capacity=2
+        )
+    )
+
+    assert len(workflow.sfn['States']) == 11
+
+def test_to_json():
+    workflow = WorkFlow(comment='test', timeout=60, version=1.1)
+    correct_sfn = ''
+    with open('tests/correct.json') as file_handle:
+        correct_sfn = file_handle.read()
+
+    assert json.loads(workflow.to_json()) == json.loads(correct_sfn)

@@ -1,119 +1,39 @@
 {
-    "StartAt": "example-batch-flow",
+    "Comment": "test",
     "States": {
-        "example-batch-flow": {
-            "Next": "example-batch-flow.2.run",
-            "Result": {
-                "jobDefinition": "sap-job-execution",
-                "jobQueue": "test-queue",
-                "jobname": "example-batch-flow",
-                "parameters": {
-                    "job": "$.params.job"
-                }
-            },
-            "ResultPath": "$.batch",
-            "Type": "Pass"
-        },
-        "example-batch-flow.2.run": {
-            "Next": "example-batch-flow.3.wait",
-            "Resource": "arn:aws:lambda:us-east-1:*:function:development-run_batch",
-            "ResultPath": "$.batch.jobId",
-            "Type": "Task"
-        },
-        "example-batch-flow.3.wait": {
-            "Next": "example-batch-flow.4.check",
-            "Seconds": 200,
-            "Type": "Wait"
-        },
-        "example-batch-flow.4.check": {
-            "Next": "example-batch-flow.5.choice",
-            "Resource": "arn:aws:lambda:us-east-1:*:function:development-check_batch",
-            "ResultPath": "$.batch.status",
-            "Retry": [
-                {
-                    "BackoffRate": 1.5,
-                    "ErrorEquals": [
-                        "Lambda.Unknown"
-                    ],
-                    "IntervalSeconds": 30,
-                    "MaxAttempts": 5
-                }
-            ],
-            "Type": "Task"
-        },
-        "example-batch-flow.5.choice": {
+        "__choice": {
             "Choices": [
                 {
-                    "Next": "failed",
-                    "StringEquals": "FAILED",
-                    "Variable": "$.batch.status"
-                },
-                {
-                    "Next": "example-glue-job",
-                    "StringEquals": "SUCCEEDED",
-                    "Variable": "$.batch.status"
+                    "Next": "__finish",
+                    "StringEquals": "pass",
+                    "Variable": "$.result.status"
                 }
             ],
-            "Default": "example-batch-flow.3.wait",
+            "Default": "__failed",
             "Type": "Choice"
         },
-        "example-glue-job": {
-            "Next": "example-glue-job.2.run",
-            "Result": {
-                "AllocatedCapacity": 2,
-                "JobName": "example-job-def"
-            },
-            "ResultPath": "$.glue",
-            "Type": "Pass"
-        },
-        "example-glue-job.2.run": {
-            "Next": "example-glue-job.3.wait",
-            "Resource": "arn:aws:lambda:us-east-1:*:function:development-run_glue",
-            "ResultPath": "$.glue.runId",
-            "Type": "Task"
-        },
-        "example-glue-job.3.wait": {
-            "Next": "example-glue-job.4.check",
-            "Seconds": 200,
-            "Type": "Wait"
-        },
-        "example-glue-job.4.check": {
-            "Next": "example-glue-job.5.choice",
-            "Resource": "arn:aws:lambda:us-east-1:*:function:development-check_glue",
-            "ResultPath": "$.glue.status",
-            "Retry": [
-                {
-                    "BackoffRate": 1.5,
-                    "ErrorEquals": [
-                        "Lambda.Unknown"
-                    ],
-                    "IntervalSeconds": 30,
-                    "MaxAttempts": 5
-                }
-            ],
-            "Type": "Task"
-        },
-        "example-glue-job.5.choice": {
-            "Choices": [
-                {
-                    "Next": "failed",
-                    "StringEquals": "FAILED",
-                    "Variable": "$.glue.status"
-                },
-                {
-                    "Next": "finish",
-                    "StringEquals": "SUCCEEDED",
-                    "Variable": "$.glue.status"
-                }
-            ],
-            "Default": "example-glue-job.3.wait",
-            "Type": "Choice"
-        },
-        "failed": {
+        "__failed": {
             "Type": "Fail"
         },
-        "finish": {
+        "__finish": {
             "Type": "Succeed"
+        },
+        "__update": {
+            "Next": "__choice",
+            "Resource": "arn:aws:lambda:us-east-1:*:function:drench_sdk_update_job",
+            "Retry": [
+                {
+                    "BackoffRate": 1.5,
+                    "ErrorEquals": [
+                        "Lambda.Unknown"
+                    ],
+                    "IntervalSeconds": 30,
+                    "MaxAttempts": 5
+                }
+            ],
+            "Type": "Task"
         }
-    }
+    },
+    "TimeoutSeconds": 60,
+    "Version": 1.1
 }
