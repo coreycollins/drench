@@ -1,0 +1,6 @@
+boto3
+pytest
+python-lambda-local
+pytest-watch
+placebo
+jsonpath-ng

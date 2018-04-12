@@ -14,9 +14,12 @@ __pycache__/
 venv/
 
 # Build directory
-build/
+.build/
 
 # Terraform
 secret.tfvars
 .terraform
 terraform.tfstate.d/
+dist/
+.pytest_cache/
+.coverage

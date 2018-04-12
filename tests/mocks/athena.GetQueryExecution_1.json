@@ -1,0 +1,26 @@
+{
+  "status_code": 200,
+  "data": {
+    "QueryExecution": {
+        "QueryExecutionId": "123",
+        "Query": "SELECT *",
+        "ResultConfiguration": {
+            "OutputLocation": "s3://com.drench.results/2345/test-query/out"
+        },
+        "QueryExecutionContext": {
+            "Database": "foo"
+        },
+        "Status": {
+            "State": "SUCCEEDED",
+            "StateChangeReason": "finish",
+            "SubmissionDateTime": "2015-01-01",
+            "CompletionDateTime": "2015-01-01"
+        },
+        "Statistics": {
+            "EngineExecutionTimeInMillis": 123,
+            "DataScannedInBytes": 123
+        }
+    }
+  }
+}
+

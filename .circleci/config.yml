@@ -1,62 +1,88 @@
 version: 2.0
 
-defaults: &defaults
-  working_directory: /root/project
-  docker:
-    - image: compassventures/buildpacks
-
-deploysteps: &deploysteps
-  steps:
-    - checkout
-    - run:
-        name: build
-        command: |
-          $CIRCLE_WORKING_DIRECTORY/scripts/build_libs
-    - deploy:
-        name: deploy
-        command: |
-          cd $CIRCLE_WORKING_DIRECTORY
-          terraform init $CIRCLE_WORKING_DIRECTORY/terraform
-          terraform workspace select $STATE_ENV $CIRCLE_WORKING_DIRECTORY/terraform
-          terraform apply -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" $CIRCLE_WORKING_DIRECTORY/terraform
-
 jobs:
   test:
-    <<: *defaults
+    working_directory: /tmp/project
+    docker:
+      - image: circleci/python:3.6.1
     steps:
       - checkout
-  deploy-dev:
-    <<: *defaults
-    environment:
-      STATE_ENV: development
-      AWS_DEFAULT_REGION: us-east-1
-    <<: *deploysteps
-  deploy-stage:
-    <<: *defaults
-    environment:
-      STATE_ENV: staging
-      AWS_DEFAULT_REGION: us-east-1
-    <<: *deploysteps
+      - run:
+          name: install dig
+          command: sudo apt-get update && sudo apt-get install dnsutils
+      - run:
+          name: Keyscan Github (HACK)
+          command: ssh-keyscan $(dig +short github.com | tail -1) >> ~/.ssh/known_hosts
+      - run:
+          name: install dependencies
+          command: |
+            pip install --user -r requirements.txt
+            pip install --user -r requirements-dev.txt
+      - run:
+          name: test
+          command: ~/.local/bin/pytest
+  deploy-canary:
+    working_directory: /tmp/project
+    docker:
+      - image: circleci/python:3.6.1
+    steps:
+      - checkout
+      - run:
+          name: install dependencies
+          command: |
+            pip install --user -r requirements.txt
+            pip install --user boto3
+      - deploy:
+          name: Deploy to AWS
+          command: python scripts/deploy.py
   deploy-prod:
-    <<: *defaults
-    environment:
-      STATE_ENV: production
-      AWS_DEFAULT_REGION: us-east-1
-    <<: *deploysteps
+    working_directory: /tmp/project
+    docker:
+      - image: circleci/python:3.6.1
+    steps:
+      - checkout
+      - run:
+          name: install dependencies
+          command: |
+            pip install --user -r requirements.txt
+            pip install --user boto3
+      - deploy:
+          name: Deploy to AWS
+          command: |
+            python scripts/deploy.py
+            python scripts/publish.py
 
 workflows:
   version: 2
-  build:
+  test:
     jobs:
       - test:
           filters:
             branches:
               ignore:
                 - master
-                - develop
-  deploy-dev:
+  deploy-canary:
     jobs:
-      - deploy-dev:
+      - test:
           filters:
             branches:
-              only: develop
+              only: master
+            tags:
+              ignore: /^v.*/
+      - deploy-canary:
+          requires:
+            - test
+  deploy-prod:
+    jobs:
+      - test:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      - deploy-prod:
+          filters:
+            tags:
+              only: /^v.*/
+          requires:
+            - test

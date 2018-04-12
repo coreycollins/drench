@@ -1,0 +1,37 @@
+{
+  "Comment": "test",
+  "States": {
+    "__choice": {
+      "Choices": [
+        {
+          "Next": "__finish",
+          "StringEquals": "pass",
+          "Variable": "$.result.status"
+        }
+      ],
+      "Default": "__failed",
+      "Type": "Choice"
+    },
+    "__failed": {
+      "Type": "Fail"
+    },
+    "__finish": {
+      "Type": "Succeed"
+    },
+    "__update": {
+      "Next": "__choice",
+      "Resource": "arn:aws:lambda:us-east-1:1234:function:drench_sdk_update_job",
+      "Retry": [
+        {
+          "BackoffRate": 1.5,
+          "ErrorEquals": ["Lambda.Unknown"],
+          "IntervalSeconds": 30,
+          "MaxAttempts": 5
+        }
+      ],
+      "Type": "Task"
+    }
+  },
+  "TimeoutSeconds": 60,
+  "Version": 1.1
+}
