@@ -30,28 +30,28 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
         '''compile and return all steps in the transform'''
         self.steps = {}
 
-        self.steps[self.name] = PassState(
+        self.steps[f'{self.name}.1.setup'] = PassState(
             Result=self.setup(),
             ResultPath='$.next',
-            Next='%s.2.run' % self.name
+            Next=f'{self.name}.2.run'
         )
 
-        self.steps['%s.2.run' % self.name] = TaskState(
+        self.steps[f'{self.name}.2.run'] = TaskState(
             Resource=RESOURCES.get_arn('lambda', 'function:development-run_task'),
-            Next='%s.3.wait' % self.name,
+            Next=f'{self.name}.3.wait',
             ResultPath='$'
         )
 
-        self.steps[f'{self.name}.{len(self.steps)+1}.wait'] = WaitState(
+        self.steps[f'{self.name}.3.wait'] = WaitState(
             Seconds=self.wait_seconds,
-            Next=f'{self.name}.{len(self.steps)+2}.check_{self.task}',
+            Next=f'{self.name}.4.check',
         )
 
 
-        self.steps[f'{self.name}.{len(self.steps)+1}.check_{self.task}'] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', f'function:development-check_{self.task}'),
-            Next=f'{self.name}.{len(self.steps)+2}.choice',
-            ResultPath=f'$.result.status',
+        self.steps[f'{self.name}.4.check'] = TaskState(
+            Resource=RESOURCES.get_arn('lambda', f'function:development-check_task'),
+            Next=f'{self.name}.5.choice',
+            ResultPath=f'$.result',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
@@ -60,7 +60,7 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
             }]
         )
 
-        self.steps[f'{self.name}.{len(self.steps)+1}.choice'] = ChoiceState(
+        self.steps[f'{self.name}.5.choice'] = ChoiceState(
             Choices=[
                 {
                     'OR': [
@@ -74,13 +74,13 @@ class Transform(State): #pylint:disable=too-many-instance-attributes
                         }
                     ],
 
-                    'Next': f'{self.name}.{len(self.steps)+2}.pass_params'
+                    'Next': f'{self.name}.6.add_result'
                 }
             ],
             Default=f'{self.name}.{len(self.steps)-1}.wait'
         )
 
-        self.steps[f'{self.name}.{len(self.steps)+1}.add_result'] = TaskState(
+        self.steps[f'{self.name}.6.add_result'] = TaskState(
             Resource=RESOURCES.get_arn('lambda', 'function:development-add_result'),
             Next=self.Next,
             ResultPath='$.add_result.status',
