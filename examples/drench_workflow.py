@@ -32,8 +32,8 @@ def example_workflow():
     workflow.addTransform(
         GlueTransform(
             name='example-glue-transform',
-            Jobname='example-job-def',
-            AllocatedCapacity=2,
+            job_name='example-job-def',
+            allocated_capacity=2,
         )
     )
 
