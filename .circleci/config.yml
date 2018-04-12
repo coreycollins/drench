@@ -20,7 +20,7 @@ jobs:
             pip install --user -r requirements-dev.txt
       - run:
           name: test
-          command: pytest
+          command: ~/.local/bin/pytest
   deploy-canary:
     working_directory: /tmp/project
     docker:
