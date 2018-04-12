@@ -37,7 +37,7 @@ class WorkFlow(object):
         '''add initial states to fail if missing needed input'''
 
         first_tr = self.transforms[0]
-        query_first = first_tr.task == 'query'
+        query_first = first_tr.setup()['type'] == 'query'
 
         check_states = {
             "check_job_id": ChoiceState(
