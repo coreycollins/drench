@@ -6,10 +6,5 @@ setup(name='drench_sdk',
       author='Corey Collins',
       author_email='ccollins@cmsdm.com',
       packages=find_packages(),
-      install_requires=[
-          'boto3',
-          'python-lambda-local',
-          'jsonpath_ng',
-          'requests'
-          ]
+      install_requires=[]
 )
