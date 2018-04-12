@@ -13,9 +13,8 @@ class WorkFlow(object):
 
         self.pool_id = pool_id
 
-        self.transforms = []
-
         self.sfn = {"StartAt": "check_job_id",}
+        self.first_transform = None
 
         if comment:
             self.sfn['Comment'] = comment
@@ -34,9 +33,6 @@ class WorkFlow(object):
     def add_check_states(self):
         '''add initial states to fail if missing needed input'''
 
-        first_tr = self.transforms[0]
-        query_first = first_tr.setup()['type'] == 'query'
-
         check_states = {
             "check_job_id": ChoiceState(
                 Choices=[
@@ -46,32 +42,22 @@ class WorkFlow(object):
                         'Next': FAILED_END_NAME
                     },
                 ],
-                Default=first_tr.name if query_first else 'check_in_path'
+                Default=self.first_transform
             )
         }
-
-        if not query_first:
-            check_states['check_in_path'] = ChoiceState(
-                Choices=[
-                    {
-                        'Variable': '$.next.in_path',
-                        'StringEquals': '',
-                        'Next': FAILED_END_NAME
-                    },
-                ],
-                Default=first_tr.name
-            )
-
 
         self.sfn['States'] = {**self.sfn['States'], **check_states}
 
 
     def add_transform(self, transform):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
-        self.transforms.append(transform)
 
-        if not transform.Next:
-            transform.Next = FINISH_END_NAME
+        if not self.first_transform:
+            self.first_transform = transform.name
+
+
+        if not transform.run_next:
+            transform.run_next = FINISH_END_NAME
 
         transform.on_fail = FAILED_END_NAME
 

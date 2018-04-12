@@ -4,7 +4,7 @@ from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceStat
 
 class Transform(State):
     '''docstring for Transform.'''
-    def __init__(self, name, report=False, **kwargs):
+    def __init__(self, name, run_next=None, report=False, **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
         self.report = report
@@ -14,7 +14,7 @@ class Transform(State):
         # defaults to be over-ridden
         self.wait_seconds = 0
         self.on_fail = None
-        self.next = None
+        self.run_next = run_next
 
         self.steps = {}
 
@@ -31,7 +31,7 @@ class Transform(State):
         '''compile and return all steps in the transform'''
         self.steps = {}
 
-        self.steps[f'{self.name}.1.setup'] = PassState(
+        self.steps[f'{self.name}'] = PassState(
             Result=self.setup(),
             ResultPath='$.next',
             Next=f'{self.name}.2.run'
@@ -83,7 +83,7 @@ class Transform(State):
 
         self.steps[f'{self.name}.6.add_result'] = TaskState(
             Resource=self.resources.get_arn('lambda', 'function:development-add_result'),
-            Next=self.Next,
+            Next=f'{self.name}.7.choice',
             ResultPath='$.add_result.status',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
@@ -92,12 +92,12 @@ class Transform(State):
                 'BackoffRate': 1.5
             }]
         )
-        self.steps[f'{self.name}.5.choice'] = ChoiceState(
+        self.steps[f'{self.name}.7.choice'] = ChoiceState(
             Choices=[
                 {
                     'Variable': f'$.result.status',
                     'StringEquals': 'SUCCEEDED',
-                    'Next': self.next
+                    'Next': self.run_next
                 }
             ],
             Default=self.on_fail
@@ -105,67 +105,33 @@ class Transform(State):
 
         return self.steps
 
-#class SNSTransform(Transform):
-#    '''docstring for .'''
-#    def __init__(self, TopicArn, Subject, Message, **kwargs):
-#        super(SNSTransform, self).__init__( **kwargs)
-#        self.TopicArn = TopicArn
-#        self.Subject = Subject
-#        self.Message = Message
-#
-#    def states(self):
-#        self.steps[self.name] = PassState(
-#            Next='%s.2.send' % self.name,
-#            Result={
-#                'arn': self.TopicArn,
-#                'subject': self.Subject,
-#                'message': self.Message
-#            },
-#            ResultPath='$.sns'
-#        )
-#
-#        self.steps['%s.2.send' % self.name] = TaskState(
-#            Resource=self.resources.get_arn('lambda', 'function:send_sns'),
-#            Next=self.Next
-#        )
-#
-#        return self.steps
+class BatchTransform(Transform):
+    '''docstring for .'''
+    def __init__(self, job_queue, job_definition, parameters=None, **kwargs):
+        super(BatchTransform, self).__init__(**kwargs)
+        self.job_queue = job_queue
+        self.job_definition = job_definition
+        self.parameters = parameters
+        self.wait_seconds = 300
 
-#class BatchTransform(Transform):
-#    '''docstring for .'''
-#    def __init__(self, job_queue, job_definition, parameters=None, **kwargs):
-#        super(BatchTransform, self).__init__(**kwargs)
-#        self.job_queue = job_queue
-#        self.job_definition = job_definition
-#        self.parameters = parameters
-#
-#    def states(self):
-#        setup = {
-#            'jobname': self.name,
-#            'jobQueue':self.job_queue,
-#            'jobDefinition': self.job_definition
-#        }
-#
-#        if self.parameters:
-#            setup['parameters'] = self.parameters
-#
-#
-#        self.steps[self.name] = PassState(
-#            Result=setup,
-#            ResultPath='$.batch',
-#            Next='%s.2.run' % self.name,
-#        )
-#
-#        self.steps['%s.2.run' % self.name] = TaskState(
-#            Resource=self.resources.get_arn('lambda', 'function:development-run_batch'),
-#            Next='%s.3.wait' % self.name,
-#            ResultPath='$.batch.jobId'
-#        )
-#
-#        self.append_wait_result_choice(wait_seconds=180)
-#
-#        return self.steps
+    def setup(self):
+        setup = super(BatchTransform, self).setup()
+        setup['type'] = 'glue'
+        setup['params'] = {
+            'jobname': self.name,
+            'jobQueue':self.job_queue,
+            'jobDefinition': self.job_definition
+        }
 
+        setup['params']['parameters'] = {
+            '--in_path':'$.next.in_path',
+            '--out_path':'$.next.out_path'
+        }
+
+        if self.parameters:
+            setup['params']['parameters'] = {**setup['params']['parameters'], **self.parameters}
+
+        return setup
 
 class GlueTransform(Transform):
     '''docstring for .'''
@@ -174,6 +140,7 @@ class GlueTransform(Transform):
         self.job_name = job_name
         self.arguments = arguments
         self.allocated_capacity = allocated_capacity
+        self.wait_seconds = 600
 
     def setup(self):
         setup = super(GlueTransform, self).setup()
@@ -194,33 +161,22 @@ class GlueTransform(Transform):
         return setup
 
 
-#class QueryTransform(Transform):
-#    '''docstring for .'''
-#    def __init__(self, QueryString, database, **kwargs):
-#        super(QueryTransform, self).__init__(**kwargs)
-#        self.QueryString = QueryString
-#        self.QueryExecutionContext = {'Database': database}
-#        self.ResultConfiguration = {'OutputLocation': ''}
-#
-#    def states(self):
-#        setup = {
-#            'QueryString': self.QueryString,
-#            'QueryExecutionContext': self.QueryExecutionContext,
-#            'ResultConfiguration': self.ResultConfiguration
-#        }
-#
-#        self.steps[self.name] = PassState(
-#            Result=setup,
-#            ResultPath='$.query',
-#            Next='%s.2.run' % self.name
-#        )
-#
-#        self.steps['%s.2.run' % self.name] = TaskState(
-#            Resource=self.resources.get_arn('lambda', 'function:development-run_query'),
-#            Next='%s.3.wait' % self.name,
-#            ResultPath='$.query.QueryExecutionId'
-#        )
-#
-#        self.append_wait_result_choice(wait_seconds=30)
-#
-#        return self.steps
+class QueryTransform(Transform):
+    '''docstring for .'''
+    def __init__(self, query_string, database, **kwargs):
+        super(QueryTransform, self).__init__(**kwargs)
+        self.query_string = query_string
+        self.query_execution_context = {'Database': database}
+        self.result_configuration = {'OutputLocation': '$.next.out_path'}
+        self.wait_seconds = 30
+
+    def setup(self):
+        setup = super(QueryTransform, self).setup()
+        setup['type'] = 'query'
+        setup['params'] = {
+            'QueryString': self.query_string,
+            'QueryExecutionContext': self.query_execution_context,
+            'ResultConfiguration': self.result_configuration
+        }
+
+        return setup
