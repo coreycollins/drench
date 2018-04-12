@@ -1,17 +1,19 @@
 '''update drench-api with stepp function step results'''
 import json
+import jsonpath_ng
 import boto3
 
 def handler(event, context): # pylint:disable=unused-argument
     '''lambda interface'''
 
+    expr = jsonpath_ng.parse('$.next.account_id')
+    account_id = expr.find(event)[0].value
+
     payload = {
         'body': json.dumps(event['result']),
         'requestContext': {
             'authorizer': {
-                # FIXME: below is hacky
-                # alternative is to parse account id from context ARN
-                'principalId': boto3.client('sts').get_caller_identity()['Account']
+                'principalId': account_id
                 }
             },
         'queryStringParameters': {},

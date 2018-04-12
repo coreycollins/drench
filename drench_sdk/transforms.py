@@ -2,8 +2,6 @@
 from drench_sdk.resources import Resources
 from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceState
 
-RESOURCES = Resources()
-
 class Transform(State):
     '''docstring for Transform.'''
     def __init__(self, name, report=False, **kwargs):
@@ -11,16 +9,23 @@ class Transform(State):
         self.name = name
         self.report = report
 
+        self.resources = Resources()
+
         # defaults to be over-ridden
-        self.wait_seconds = 60
+        self.wait_seconds = 0
         self.on_fail = None
         self.next = None
 
         self.steps = {}
 
     def setup(self):
-        '''placeholder for inheritor classes to populate'''
-        pass
+        '''build $.next'''
+        setup = {
+            'name': self.name,
+            'report': self.report,
+            'account_id': self.resources.get_account()
+        }
+        return setup
 
     def states(self):
         '''compile and return all steps in the transform'''
@@ -33,7 +38,7 @@ class Transform(State):
         )
 
         self.steps[f'{self.name}.2.run'] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function:development-run_task'),
+            Resource=self.resources.get_arn('lambda', 'function:development-run_task'),
             Next=f'{self.name}.3.wait',
             ResultPath='$'
         )
@@ -45,7 +50,7 @@ class Transform(State):
 
 
         self.steps[f'{self.name}.4.check'] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', f'function:development-check_task'),
+            Resource=self.resources.get_arn('lambda', f'function:development-check_task'),
             Next=f'{self.name}.5.choice',
             ResultPath=f'$.result',
             Retry=[{
@@ -77,7 +82,7 @@ class Transform(State):
         )
 
         self.steps[f'{self.name}.6.add_result'] = TaskState(
-            Resource=RESOURCES.get_arn('lambda', 'function:development-add_result'),
+            Resource=self.resources.get_arn('lambda', 'function:development-add_result'),
             Next=self.Next,
             ResultPath='$.add_result.status',
             Retry=[{
@@ -120,7 +125,7 @@ class Transform(State):
 #        )
 #
 #        self.steps['%s.2.send' % self.name] = TaskState(
-#            Resource=RESOURCES.get_arn('lambda', 'function:send_sns'),
+#            Resource=self.resources.get_arn('lambda', 'function:send_sns'),
 #            Next=self.Next
 #        )
 #
@@ -152,7 +157,7 @@ class Transform(State):
 #        )
 #
 #        self.steps['%s.2.run' % self.name] = TaskState(
-#            Resource=RESOURCES.get_arn('lambda', 'function:development-run_batch'),
+#            Resource=self.resources.get_arn('lambda', 'function:development-run_batch'),
 #            Next='%s.3.wait' % self.name,
 #            ResultPath='$.batch.jobId'
 #        )
@@ -171,14 +176,11 @@ class GlueTransform(Transform):
         self.allocated_capacity = allocated_capacity
 
     def setup(self):
-        setup = {
-            'name': self.name,
-            'type': 'glue',
-            'params': {
-                'JobName': self.job_name,
-                'Allocated_capacity': self.allocated_capacity
-            },
-            'report': self.report
+        setup = super(GlueTransform, self).setup()
+        setup['type'] = 'glue'
+        setup['params'] = {
+            'JobName': self.job_name,
+            'AllocatedCapacity': self.allocated_capacity
         }
 
         setup['params']['arguments'] = {
@@ -214,7 +216,7 @@ class GlueTransform(Transform):
 #        )
 #
 #        self.steps['%s.2.run' % self.name] = TaskState(
-#            Resource=RESOURCES.get_arn('lambda', 'function:development-run_query'),
+#            Resource=self.resources.get_arn('lambda', 'function:development-run_query'),
 #            Next='%s.3.wait' % self.name,
 #            ResultPath='$.query.QueryExecutionId'
 #        )
