@@ -3,6 +3,24 @@ import boto3
 
 PASS = 'pass'
 FAIL = 'fail'
+LIVE = 'running'
+
+STATUS_INDEX = {
+    'SUCCEEDED': 'pass',
+
+    'FAILED': 'fail',
+    'CANCELED':'fail',
+    'TIMEOUT':'fail',
+    'STOPPED': 'fail',
+
+    'QUEUED': 'running',
+    'RUNNING': 'running',
+    'SUBMITTED': 'running',
+    'PENDING': 'running',
+    'RUNNABLE': 'running',
+    'STARTING': 'running',
+    'STOPPING': 'running'
+}
 
 def handler(event, context): #pylint:disable=unused-argument
     '''default lambda interface'''
@@ -13,7 +31,7 @@ def handler(event, context): #pylint:disable=unused-argument
         name = event['next']['params']['JobName']
         jid = event['result']['job_id']
         res = client.get_job_run(JobName=name, RunId=jid)
-        return PASS if res['JobRun']['JobRunState'] == 'SUCCEEDED' else FAIL
+        return STATUS_INDEX[res['JobRun']['JobRunState']]
 
     def check_batch():
         '''get status for batch job'''
@@ -21,14 +39,14 @@ def handler(event, context): #pylint:disable=unused-argument
         jid = event['result']['job_id']
         res = client.describe_jobs(jobs=[jid])
         job = next(j for j in res['jobs'] if j['jobId'] == jid)
-        return PASS if job['status'] == 'SUCCEEDED' else FAIL
+        return STATUS_INDEX[job['status']]
 
     def check_query():
         '''get status for athena query'''
         client = boto3.client('athena', region_name='us-east-1')
         jid = event['result']['job_id']
         res = client.get_query_execution(QueryExecutionId=jid)
-        return PASS if res['QueryExecution']['Status']['State'] == 'SUCCEEDED' else FAIL
+        return STATUS_INDEX[res['QueryExecution']['Status']['State']]
 
     runner = {
         'glue': check_glue,
