@@ -11,9 +11,7 @@ def handler(event, context): #pylint:disable=unused-argument
         event['next']['in_path'] = event['result']['out_path']
 
     # Construct output path by convention
-    # FIXME mime_type lookup table?
-    # FIXME rename mime_type to file_type?
-    event['next']['out_path'] = f'{RESULT_BUCKET}/{event["job_id"]}/{event["next"]["name"]}/out.{event["next"]["mime_type"]}'
+    event['next']['out_path'] = f'{RESULT_BUCKET}/{event["job_id"]}/{event["next"]["name"]}/out'
 
     # Substitute parameters
     for key, val in event['next']['params'].iteritems():
