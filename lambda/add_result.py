@@ -9,7 +9,9 @@ def handler(event, context): # pylint:disable=unused-argument
         'body': json.dumps(event['result']),
         'requestContext': {
             'authorizer': {
-                'principalId': 1234 #FIXME hard code?
+                # FIXME: below is hacky
+                # alternative is to parse account id from context ARN
+                'principalId': boto3.client('sts').get_caller_identity()['Account']
                 }
             },
         'queryStringParameters': {},
