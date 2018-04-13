@@ -22,9 +22,12 @@ class Transform(State):
         '''build $.next'''
         setup = {
             'name': self.name,
-            'content_type': self.content_type,
-            'report_url': self.report_url
+            'content_type': self.content_type
         }
+
+        if self.report_url:
+            setup['report_url'] = self.report_url
+
         return setup
 
     def states(self):
