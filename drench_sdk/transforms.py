@@ -11,7 +11,7 @@ class Transform(State):
                  **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
-        self.report_url = report_url or ''
+        self.report_url = report_url
         self.content_type = content_type
 
         # defaults to be over-ridden
