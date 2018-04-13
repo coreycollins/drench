@@ -1,6 +1,10 @@
 {
   "status_code": 200,
   "data": {
-    "StatusCode": 200
+    "StatusCode": 200,
+    "Payload": {
+      "__class__": "StreamingBody",
+      "body": "{\"statusCode\": 200,\"body\":\"\"}"
+    }
   }
 }
