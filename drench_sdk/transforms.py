@@ -11,7 +11,7 @@ class Transform(State):
                  **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
         self.name = name
-        self.report_url = report_url
+        self.report_url = report_url or ''
         self.content_type = content_type
 
         # defaults to be over-ridden
@@ -22,11 +22,9 @@ class Transform(State):
         '''build $.next'''
         setup = {
             'name': self.name,
-            'content_type': self.content_type
+            'content_type': self.content_type,
+            'report_url': self.report_url
         }
-
-        if self.report_url:
-            setup['report_url'] = self.report_url
 
         return setup
 
