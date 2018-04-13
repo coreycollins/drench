@@ -37,12 +37,12 @@ def test_no_account_id():
     with pytest.raises(KeyError) as error:
         handler(event, {})
 
-    assert str(error.value) == "'account_id'"
+    assert str(error.value) == "'principal_id'"
 
 def test_run_query():
     event = {
         'job_id': 1234,
-        'account_id': 4321,
+        'principal_id': 4321,
         'next': {
             'in_path': 'some/path',
             'name': 'test-query',
@@ -67,7 +67,7 @@ def test_run_query():
 def test_run_batch():
     event = {
         'job_id': 2345,
-        'account_id': 5432,
+        'principal_id': 5432,
         'next': {
             'name': 'test-batch',
             'type': 'batch',
@@ -96,7 +96,7 @@ def test_run_batch():
 def test_run_glue():
     event = {
         'job_id': 3456,
-        'account_id': 6543,
+        'principal_id': 6543,
         'next': {
             'name': 'test-glue',
             'type': 'glue',
