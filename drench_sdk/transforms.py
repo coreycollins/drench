@@ -64,7 +64,7 @@ class Transform(State):
         steps[f'{self.name}.5.choice'] = ChoiceState(
             Choices=[
                 {
-                    'OR': [
+                    'Or': [
                         {
                             'Variable': f'$.result.status',
                             'StringEquals': 'fail',
