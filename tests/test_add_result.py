@@ -5,7 +5,7 @@ from lambdas.add_result import handler
 def test_add_result():
     event = {
         'job_id': 1234,
-        'account_id': 4321,
+        'principal_id': 4321,
         'next': {
             'in_path': 'some/path',
             'out_path': 's3://com.drench.results/1234/test-query/out',

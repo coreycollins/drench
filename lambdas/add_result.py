@@ -9,7 +9,7 @@ def handler(event, context): # pylint:disable=unused-argument
         'body': json.dumps(event['result']),
         'requestContext': {
             'authorizer': {
-                'principalId': event["account_id"]
+                'principalId': event["principal_id"]
                 }
             },
         'queryStringParameters': {},
@@ -20,7 +20,12 @@ def handler(event, context): # pylint:disable=unused-argument
 
     client = boto3.client('lambda', region_name='us-east-1')
 
-    client.invoke(
+    res = client.invoke(
         FunctionName='arsa-drench-api:v1',
         Payload=json.dumps(payload).encode()
     )
+
+    if res['StatusCode'] != 200:
+        raise Exception(res['FunctionError'])
+
+    return event
