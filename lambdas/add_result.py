@@ -5,8 +5,12 @@ import boto3
 def handler(event, context): # pylint:disable=unused-argument
     '''lambda interface'''
 
+    body = {
+        'step': event['result']
+    }
+
     payload = {
-        'body': json.dumps(event['result']),
+        'body': json.dumps(body),
         'requestContext': {
             'authorizer': {
                 'principalId': event["principal_id"]
@@ -25,7 +29,9 @@ def handler(event, context): # pylint:disable=unused-argument
         Payload=json.dumps(payload).encode()
     )
 
-    if res['StatusCode'] != 200:
-        raise Exception(res['FunctionError'])
+    body = json.loads(res['Payload'].read())
+
+    if body['statusCode'] != 200:
+        raise Exception(body['body'])
 
     return event

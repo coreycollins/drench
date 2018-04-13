@@ -32,7 +32,9 @@ def handler(event, context): # pylint:disable=unused-argument
         Payload=json.dumps(payload).encode()
     )
 
-    if res['StatusCode'] != 200:
-        raise Exception(res['FunctionError'])
+    body = json.loads(res['Payload'].read())
+
+    if body['statusCode'] != 200:
+        raise Exception(body['body'])
 
     return event
