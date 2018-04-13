@@ -26,7 +26,7 @@ def handler(event, context): #pylint:disable=unused-argument
     # $.next.in_path should be populated by above or user-input; raise KeyError if it is not
     _ = event['next']['in_path']
     _ = event['job_id']
-    _ = event['account_id']
+    _ = event['principal_id']
 
     if 'result' not in event:
         event['result'] = {}
