@@ -48,21 +48,27 @@ def main():
 
     lamba_client = boto3.client('lambda')
 
-    # Update Run Task
+    # Run Task
     lamba_client.update_function_code(
-        FunctionName='drench_sdk_run_task',
+        FunctionName='drench-sdk-run-task',
         ZipFile=buf.getvalue()
     )
 
-    # Update Check Task
+    # Check Task
     lamba_client.update_function_code(
-        FunctionName='drench_sdk_check_task',
+        FunctionName='drench-sdk-check-task',
         ZipFile=buf.getvalue()
     )
 
-    # Update Add Result
+    # Add Result
     lamba_client.update_function_code(
-        FunctionName='drench_sdk_add_result',
+        FunctionName='drench-sdk-add-result',
+        ZipFile=buf.getvalue()
+    )
+
+    # Job Update
+    lamba_client.update_function_code(
+        FunctionName='drench-sdk-update-job',
         ZipFile=buf.getvalue()
     )
 
