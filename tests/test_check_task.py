@@ -34,7 +34,8 @@ def test_check_query():
         'out_path': 's3://com.drench.results/1234/test-query/out',
         'content_type': 'text',
         'report_url': None,
-        'status': 'pass'
+        'status': 'pass',
+        'job_id': '123'
     }
 
     res = handler(event, {})
@@ -72,7 +73,8 @@ def test_run_batch():
         'out_path': 's3://com.drench.results/1234/test-batch/out',
         'content_type': 'text',
         'report_url': None,
-        'status': 'pass'
+        'status': 'pass',
+        'job_id': '234'
     }
 
     res = handler(event, {})
@@ -109,7 +111,8 @@ def test_run_glue():
         'out_path': 's3://com.drench.results/1234/test-glue/out',
         'content_type': 'text',
         'report_url': None,
-        'status': 'pass'
+        'status': 'pass',
+        'job_id': '345'
     }
 
     res = handler(event, {})
