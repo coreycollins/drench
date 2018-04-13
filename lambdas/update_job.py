@@ -2,9 +2,16 @@
 import json
 import boto3
 
+JOB_STATE = {
+    'start': 'running',
+    'pass': 'finished',
+    'fail': 'failed'
+}
+
 def handler(event, context): # pylint:disable=unused-argument
     '''lambda interface'''
 
+    state = JOB_STATE[event["result"]["status"]]
     payload = {
         'body': '{}',
         'requestContext': {
@@ -15,7 +22,7 @@ def handler(event, context): # pylint:disable=unused-argument
         'queryStringParameters': {},
         'headers': {},
         'httpMethod': 'PUT',
-        'path': f'/jobs/{event["job_id"]}/state/{event["result"]["status"]}'
+        'path': f'/jobs/{event["job_id"]}/state/{state}'
     }
 
     client = boto3.client('lambda')
