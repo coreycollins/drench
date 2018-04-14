@@ -5,20 +5,20 @@ import boto3
 def handler(event, context): # pylint:disable=unused-argument
     '''lambda interface'''
 
-    body = {
+    req_body = {
         'step': {
-            'name': event['result']['name'],
-            'out_path': event['result']['out_path'],
-            'content_type': event['result']['content_type'],
+            'name': event['next']['name'],
+            'out_path': event['next']['out_path'],
+            'content_type': event['next']['content_type'],
             'status': event['result']['status']
         }
     }
 
-    if event['result']['report_url']:
-        body['step']['report_url'] = event['result']['report_url']
+    if event['next']['report_url']:
+        req_body['step']['report_url'] = event['next']['report_url']
 
-    payload = {
-        'body': json.dumps(body),
+    req_payload = {
+        'body': json.dumps(req_body),
         'requestContext': {
             'authorizer': {
                 'principalId': event["principal_id"]
@@ -32,14 +32,14 @@ def handler(event, context): # pylint:disable=unused-argument
 
     client = boto3.client('lambda', region_name='us-east-1')
 
-    res = client.invoke(
+    invoke_res = client.invoke(
         FunctionName='arsa-drench-api:v1',
-        Payload=json.dumps(payload).encode()
+        Payload=json.dumps(req_payload).encode()
     )
 
-    body = json.loads(res['Payload'].read())
+    res_payload = json.loads(invoke_res['Payload'].read())
 
-    if body['statusCode'] != 200:
-        raise Exception(body['body'])
+    if res_payload['statusCode'] != 200:
+        raise Exception(res_payload['body'])
 
     return event
