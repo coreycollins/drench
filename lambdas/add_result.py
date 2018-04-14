@@ -14,7 +14,7 @@ def handler(event, context): # pylint:disable=unused-argument
         }
     }
 
-    if event['next']['report_url']:
+    if 'report_url' in event['next']:
         req_body['step']['report_url'] = event['next']['report_url']
 
     req_payload = {
