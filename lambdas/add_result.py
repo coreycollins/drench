@@ -7,15 +7,15 @@ def handler(event, context): # pylint:disable=unused-argument
 
     req_body = {
         'step': {
-            'name': event['result']['name'],
-            'out_path': event['result']['out_path'],
-            'content_type': event['result']['content_type'],
+            'name': event['next']['name'],
+            'out_path': event['next']['out_path'],
+            'content_type': event['next']['content_type'],
             'status': event['result']['status']
         }
     }
 
-    if event['result']['report_url']:
-        req_body['step']['report_url'] = event['result']['report_url']
+    if event['next']['report_url']:
+        req_body['step']['report_url'] = event['next']['report_url']
 
     req_payload = {
         'body': json.dumps(req_body),

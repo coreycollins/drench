@@ -51,11 +51,4 @@ def handler(event, context): #pylint:disable=unused-argument
     }
 
     task_type = event['next']['type']
-    return {
-        'name': event['next']['name'],
-        'out_path': event['next']['out_path'],
-        'content_type': event['next']['content_type'],
-        'report_url': event['next']['report_url'],
-        'status': runner[task_type](),
-        'job_id': event['result']['job_id']
-    }
+    return runner[task_type]()

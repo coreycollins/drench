@@ -53,7 +53,7 @@ class Transform(State):
         steps[f'{self.name}.4.check'] = TaskState(
             Resource=get_arn('lambda', f'function:drench-sdk-check-task'),
             Next=f'{self.name}.5.choice',
-            ResultPath=f'$.result',
+            ResultPath=f'$.result.status',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
