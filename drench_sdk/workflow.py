@@ -3,7 +3,7 @@
 import json
 
 from drench_resources import get_arn
-from drench_sdk.states import SucceedState, FailState, TaskState, ChoiceState
+from drench_sdk.states import State, SucceedState, FailState, TaskState, ChoiceState
 
 UPDATE_END_NAME = '__update'
 CHOICE_END_NAME = '__choice'
@@ -66,13 +66,17 @@ class WorkFlow(object):
 
         self.sfn['States'] = {**self.sfn['States'], **transform.states()}
 
+    def as_dict(self):
+        """ return state machine as a dict """
+        def serialize(obj):
+            if isinstance(obj, dict):
+                return {k: serialize(v.__dict__)
+                           if isinstance(v, State) else serialize(v)
+                        for (k, v) in obj.items() if v}
+            return obj
+
+        return serialize(self.sfn)
+
     def to_json(self):
         """dump Worktransform to AWS Step Function JSON"""
-        def encode_state(obj):
-            """coerce object into dicts"""
-            try:
-                return obj.to_json()
-            except AttributeError:
-                return dict((k, v) for k, v in obj.__dict__.items() if v)
-
-        return json.dumps(self.sfn, default=encode_state, indent=4, sort_keys=True)
+        return json.dumps(self.as_dict(), indent=4, sort_keys=True)

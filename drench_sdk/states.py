@@ -15,7 +15,7 @@ class State(object):
         self.ResultPath = ResultPath
         self.OutputPath = OutputPath
 
-class SucceedState(object):
+class SucceedState(State):
     """ Succeed state in the state machine."""
     def __init__(self):
         self.Type = "Succeed"

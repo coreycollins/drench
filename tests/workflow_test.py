@@ -27,4 +27,5 @@ def test_to_json():
     with open('tests/correct.json') as file_handle:
         correct_sfn = file_handle.read()
 
+    print(workflow.as_dict())
     assert json.loads(workflow.to_json()) == json.loads(correct_sfn)
