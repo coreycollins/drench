@@ -14,7 +14,6 @@ def test_no_in_path():
     with pytest.raises(KeyError) as error:
         handler(event, {})
 
-    print(error)
     assert str(error.value) == "'in_path'"
 
 def test_no_in_path_with_query():
