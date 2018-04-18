@@ -122,8 +122,8 @@ class BatchTransform(Transform):
             'jobQueue':self.job_queue,
             'jobDefinition': self.job_definition,
             'parameters': {
-                '--in_path':'$.next.in_path',
-                '--out_path':'$.next.out_path'
+                'in_path':'$.next.in_path',
+                'out_path':'$.next.out_path'
             }
         }
 

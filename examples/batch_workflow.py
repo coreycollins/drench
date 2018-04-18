@@ -9,13 +9,11 @@ def example_workflow():
     workflow.add_transform(
         BatchTransform(
             name='example-batch-workflow',
-            job_definition='development_nightcrawler',
+            job_definition='sap-job-execution',
             job_queue='production_low',
             parameters={
-                'email': 'ejaros@cmsdm.com',
-                'file': 'Upload/false200.csv',
-                'name': 'urgz_test',
-                'site': 'test'
+                'job': 's3://temp.compass.com/test_drench_sap_batch/test_sap_job.atl',
+                'job_name': 'test_batch_job'
                 }
             )
         )
