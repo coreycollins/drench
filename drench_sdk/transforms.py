@@ -116,14 +116,14 @@ class BatchTransform(Transform):
 
     def setup(self):
         setup = super(BatchTransform, self).setup()
-        setup['type'] = 'glue'
+        setup['type'] = 'batch'
         setup['params'] = {
-            'jobname': self.name,
+            'jobName': self.name,
             'jobQueue':self.job_queue,
             'jobDefinition': self.job_definition,
             'parameters': {
-                '--in_path':'$.next.in_path',
-                '--out_path':'$.next.out_path'
+                'in_path':'$.next.in_path',
+                'out_path':'$.next.out_path'
             }
         }
 

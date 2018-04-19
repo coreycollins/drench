@@ -23,8 +23,11 @@ def handler(event, context): #pylint:disable=unused-argument
     if 'result' in event:
         event['next']['in_path'] = event['result']['out_path']
 
-    # $.next.in_path should be populated by above or user-input; raise KeyError if it is not
-    _ = event['next']['in_path']
+    # raise KeyError if needed input missing
+    task_type = event['next']['type']
+    if task_type != 'query':
+        _ = event['next']['in_path']
+
     _ = event['job_id']
     _ = event['principal_id']
 
@@ -40,7 +43,6 @@ def handler(event, context): #pylint:disable=unused-argument
 
     #pylint:disable=line-too-long
     #consider setting AWS_DEFAULT_REGION env var for lambda?
-    task_type = event['next']['type']
     runner = {
         'glue': lambda p: boto3.client('glue', region_name='us-east-1').start_job_run(**p)['JobRunId'],
         'batch': lambda p: boto3.client('batch', region_name='us-east-1').submit_job(**p)['jobId'],

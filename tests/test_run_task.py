@@ -6,7 +6,9 @@ from lambdas.run_task import handler
 
 def test_no_in_path():
     event = {
-        'next': {}
+        'next': {
+            'type':'batch'
+            }
     }
 
     with pytest.raises(KeyError) as error:
@@ -14,10 +16,24 @@ def test_no_in_path():
 
     assert str(error.value) == "'in_path'"
 
+def test_no_in_path_with_query():
+    event = {
+        'next': {
+            'type':'query'
+            }
+    }
+
+    with pytest.raises(KeyError) as error:
+        handler(event, {})
+
+    assert str(error.value) == "'job_id'"
+
+
 def test_no_job_id():
     event = {
         'next': {
-            'in_path': 'some/path'
+            'in_path': 'some/path',
+            'type':'batch'
         }
     }
 
@@ -30,7 +46,8 @@ def test_no_account_id():
     event = {
         'job_id': 1234,
         'next': {
-            'in_path': 'some/path'
+            'in_path': 'some/path',
+            'type':'batch'
         }
     }
 
