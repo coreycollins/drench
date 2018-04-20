@@ -72,5 +72,11 @@ def main():
         ZipFile=buf.getvalue()
     )
 
+    # Send SNS on failure
+    lamba_client.update_function_code(
+        FunctionName='drench-sdk-fail-sns',
+        ZipFile=buf.getvalue()
+    )
+
 if __name__ == '__main__':
     main()
