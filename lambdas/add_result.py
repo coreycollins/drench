@@ -33,7 +33,7 @@ def handler(event, context): # pylint:disable=unused-argument
     client = boto3.client('lambda', region_name='us-east-1')
 
     invoke_res = client.invoke(
-        FunctionName='arsa-drench-api:v1',
+        FunctionName=f'arsa-drench-api:{event["api_version"]}',
         Payload=json.dumps(req_payload).encode()
     )
 
