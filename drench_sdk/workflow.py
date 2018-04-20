@@ -56,7 +56,7 @@ class WorkFlow(object):
     def add_transform(self, transform):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
 
-        if transform.name in [UPDATE_END_NAME]:
+        if transform.name in [UPDATE_END_NAME, INJECT_ARN_NAME, DEATH_RATTLE_NAME]:
             raise Exception(f'The transform name {transform.name} is reserved')
 
         if not transform.Next:

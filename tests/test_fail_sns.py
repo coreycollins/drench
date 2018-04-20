@@ -5,7 +5,7 @@ from lambdas.fail_sns import handler
 def test_add_result():
     event = {
         'job_id': 1234,
-        'fail_sns_topic': 'some:long:arn',
+        'topic_arn': 'some:long:arn',
         'err_info': 'err log or json'
     }
 
