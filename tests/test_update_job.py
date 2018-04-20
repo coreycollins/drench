@@ -1,8 +1,8 @@
 #pylint:disable=missing-docstring
-from lambdas.add_result import handler
+from lambdas.update_job import handler
 
 
-def test_add_result():
+def test_update_job_happy_case():
     event = {
         'api_version': 'v0',
         'job_id': 1234,
@@ -24,14 +24,17 @@ def test_add_result():
             },
         },
         'result': {
+            'name': 'test-query',
             'out_path': 's3://com.drench.results/1234/test-query/out',
+            'content_type': 'text',
+            'report_url': None,
             'status': 'pass'
         }
     }
 
-    assert handler(event, {}) == event
+    handler(event, {})
 
-def test_add_result_report():
+def test_update_job_happy_case():
     event = {
         'api_version': 'v0',
         'job_id': 1234,
@@ -40,7 +43,6 @@ def test_add_result_report():
             'in_path': 'some/path',
             'out_path': 's3://com.drench.results/1234/test-query/out',
             'content_type': 'text',
-            'report_url': 'http://example.com',
             'name': 'test-query',
             'type': 'query',
             'params': {
@@ -53,10 +55,6 @@ def test_add_result_report():
                 },
             },
         },
-        'result': {
-            'out_path': 's3://com.drench.results/1234/test-query/out',
-            'status': 'pass'
-        }
     }
 
-    assert handler(event, {}) == event
+    handler(event, {})

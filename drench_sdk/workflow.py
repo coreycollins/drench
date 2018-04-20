@@ -3,12 +3,11 @@
 import json
 
 from drench_resources import get_arn
-from drench_sdk.states import State, SucceedState, FailState, TaskState, ChoiceState
+from drench_sdk.states import PassState, State, TaskState
 
 UPDATE_END_NAME = '__update'
-CHOICE_END_NAME = '__choice'
-FINISH_END_NAME = '__finish'
-FAILED_END_NAME = '__failed'
+INJECT_ARN_NAME = '__inject_arn'
+DEATH_RATTLE_NAME = '__death_rattle'
 
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
@@ -28,32 +27,36 @@ class WorkFlow(object):
         self.sfn['States'] = {
             UPDATE_END_NAME: TaskState(
                 Resource=get_arn('lambda', f'function:drench-sdk-update-job'),
-                Next=CHOICE_END_NAME,
+                End=True,
                 Retry=[{
                     'ErrorEquals': ['Lambda.Unknown'],
                     'IntervalSeconds': 30,
                     'MaxAttempts': 5,
                     'BackoffRate': 1.5
-                }]
-            ),
-            CHOICE_END_NAME: ChoiceState(
-                Choices=[
+                }],
+                Catch=[
                     {
-                        'Variable': f'$.result.status',
-                        'StringEquals': 'pass',
-                        'Next': FINISH_END_NAME
+                        "ErrorEquals": ["States.ALL"],
+                        "ResultPath": "$.err_info",
+                        "Next": INJECT_ARN_NAME,
                     }
-                ],
-                Default=FAILED_END_NAME
+                ]
             ),
-            FINISH_END_NAME: SucceedState(),
-            FAILED_END_NAME: FailState(),
+            INJECT_ARN_NAME: PassState(
+                Result=get_arn('sns', 'drench-sdk-sfn-fail'),
+                ResultPath='$.topic_arn',
+                Next=DEATH_RATTLE_NAME
+            ),
+            DEATH_RATTLE_NAME: TaskState(
+                Resource=get_arn('lambda', 'function:drench-sdk-fail-sns'),
+                End=True
+            )
         }
 
     def add_transform(self, transform):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
 
-        if transform.name in [UPDATE_END_NAME, CHOICE_END_NAME, FINISH_END_NAME, FAILED_END_NAME]:
+        if transform.name in [UPDATE_END_NAME]:
             raise Exception(f'The transform name {transform.name} is reserved')
 
         if not transform.Next:
@@ -69,6 +72,7 @@ class WorkFlow(object):
     def as_dict(self):
         """ return state machine as a dict """
         def serialize(obj):
+            '''coerce objects to dict as necessary'''
             if isinstance(obj, dict):
                 return {k: serialize(v.__dict__)
                            if isinstance(v, State) else serialize(v)

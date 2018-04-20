@@ -41,7 +41,15 @@ class Transform(State):
         steps[f'{self.name}.2.run'] = TaskState(
             Resource=get_arn('lambda', 'function:drench-sdk-run-task'),
             Next=f'{self.name}.3.wait',
-            ResultPath='$'
+            ResultPath='$',
+            Catch=[
+                {
+                    "ErrorEquals": ["States.ALL"],
+                    "ResultPath": "$.result.status",
+                    "Next": self._on_fail
+                }
+            ]
+
         )
 
         steps[f'{self.name}.3.wait'] = WaitState(
@@ -59,7 +67,14 @@ class Transform(State):
                 'IntervalSeconds': 30,
                 'MaxAttempts': 5,
                 'BackoffRate': 1.5
-            }]
+            }],
+            Catch=[
+                {
+                    "ErrorEquals": ["States.ALL"],
+                    "ResultPath": "$.result.status",
+                    "Next": self._on_fail
+                }
+            ]
         )
 
         steps[f'{self.name}.5.choice'] = ChoiceState(
@@ -90,7 +105,14 @@ class Transform(State):
                 'IntervalSeconds': 30,
                 'MaxAttempts': 5,
                 'BackoffRate': 1.5
-            }]
+            }],
+            Catch=[
+                {
+                    "ErrorEquals": ["States.ALL"],
+                    "ResultPath": "$.result.status",
+                    "Next": self._on_fail
+                }
+            ]
         )
         steps[f'{self.name}.7.choice'] = ChoiceState(
             Choices=[
