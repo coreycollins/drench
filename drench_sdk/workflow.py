@@ -6,7 +6,7 @@ from drench_resources import get_arn
 from drench_sdk.states import PassState, State, TaskState
 
 UPDATE_END_NAME = '__update'
-INJECT_ARN_NAME = '__inject_arn'
+INJECT_SNS_PARAMS_NAME = '__inject_sns_params'
 DEATH_RATTLE_NAME = '__death_rattle'
 
 class WorkFlow(object):
@@ -38,17 +38,20 @@ class WorkFlow(object):
                     {
                         "ErrorEquals": ["States.ALL"],
                         "ResultPath": "$.err_info",
-                        "Next": INJECT_ARN_NAME,
+                        "Next": INJECT_SNS_PARAMS_NAME,
                     }
                 ]
             ),
-            INJECT_ARN_NAME: PassState(
-                Result=get_arn('sns', 'drench-sdk-sfn-fail'),
-                ResultPath='$.topic_arn',
+            INJECT_SNS_PARAMS_NAME: PassState(
+                Result={
+                    'topic_arn': get_arn('sns', 'drench_sdk_sfn_fail'),
+                    'subject': 'Drench Workflow communication failure'
+                },
+                ResultPath='$.sns',
                 Next=DEATH_RATTLE_NAME
             ),
             DEATH_RATTLE_NAME: TaskState(
-                Resource=get_arn('lambda', 'function:drench-sdk-fail-sns'),
+                Resource=get_arn('lambda', 'function:drench-sdk-send-sns'),
                 End=True
             )
         }
@@ -56,7 +59,7 @@ class WorkFlow(object):
     def add_transform(self, transform):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
 
-        if transform.name in [UPDATE_END_NAME, INJECT_ARN_NAME, DEATH_RATTLE_NAME]:
+        if transform.name in [UPDATE_END_NAME, INJECT_SNS_PARAMS_NAME, DEATH_RATTLE_NAME]:
             raise Exception(f'The transform name {transform.name} is reserved')
 
         if not transform.Next:
