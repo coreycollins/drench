@@ -29,7 +29,7 @@ def main():
     ], stdout=fnull)
 
     files = [f for f in os.listdir(lambda_path) if re.match(r'^.*\.py$', f)]
-    for f in files:
+    for f in files: #pylint:disable=invalid-name
         src = os.path.join(lambda_path, f)
         dst = os.path.join(build_path, f)
         if os.path.isdir(src):
@@ -69,6 +69,12 @@ def main():
     # Job Update
     lamba_client.update_function_code(
         FunctionName='drench-sdk-update-job',
+        ZipFile=buf.getvalue()
+    )
+
+    # Send SNS on failure
+    lamba_client.update_function_code(
+        FunctionName='drench-sdk-send-sns',
         ZipFile=buf.getvalue()
     )
 

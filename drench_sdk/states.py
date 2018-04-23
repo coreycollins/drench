@@ -6,7 +6,8 @@
 
 class State(object):
     """Base class for a state in the state machine."""
-    def __init__(self, Type, InputPath=None, ResultPath=None, OutputPath=None, Next=None, Start=False, End=False):
+    def __init__(self, Type, InputPath=None, ResultPath=None, OutputPath=None, Next=None,
+                 Start=False, End=False):
         self.Type = Type
         self.Next = Next
         self.Start = Start
@@ -18,12 +19,12 @@ class State(object):
 class SucceedState(State):
     """ Succeed state in the state machine."""
     def __init__(self):
-        self.Type = "Succeed"
+        super(SucceedState, self).__init__(Type="Succeed")
 
 class FailState(State):
     """ Succeed state in the state machine."""
     def __init__(self, Cause=None, Error=None):
-        self.Type = "Fail"
+        super(FailState, self).__init__(Type="Fail")
         self.Cause = Cause
         self.Error = Error
 

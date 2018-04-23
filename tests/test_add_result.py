@@ -4,6 +4,7 @@ from lambdas.add_result import handler
 
 def test_add_result():
     event = {
+        'api_version': 'v0',
         'job_id': 1234,
         'principal_id': 4321,
         'next': {
@@ -23,18 +24,16 @@ def test_add_result():
             },
         },
         'result': {
-            'name': 'test-query',
             'out_path': 's3://com.drench.results/1234/test-query/out',
-            'content_type': 'text',
-            'report_url': None,
             'status': 'pass'
         }
     }
 
-    handler(event, {})
+    assert handler(event, {}) == event
 
 def test_add_result_report():
     event = {
+        'api_version': 'v0',
         'job_id': 1234,
         'principal_id': 4321,
         'next': {
@@ -55,12 +54,9 @@ def test_add_result_report():
             },
         },
         'result': {
-            'name': 'test-query',
             'out_path': 's3://com.drench.results/1234/test-query/out',
-            'content_type': 'text',
-            'report_url': None,
             'status': 'pass'
         }
     }
 
-    handler(event, {})
+    assert handler(event, {}) == event
