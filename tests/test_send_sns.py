@@ -8,7 +8,6 @@ def test_add_result():
         'err_info': 'err log or json',
         'sns': {
             'topic_arn': 'some:long:arn',
-            'message': 'debug msg',
             'subject': 'test sns subj'
         }
     }
