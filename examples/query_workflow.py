@@ -6,9 +6,9 @@ def example_workflow():
     """main func"""
     workflow = WorkFlow()
 
-    workflow.add_transform(
-        QueryTransform(
-            name='example-query-transform',
+    workflow.add_state(
+        name='example-query-transform',
+        state=QueryTransform(
             database='drench_pools_development',
             query_string='SELECT company, phone FROM "32c87cfee1cd4980ba0a08816f4cc38a" LIMIT 100;',
         )

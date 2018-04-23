@@ -5,12 +5,10 @@ from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceStat
 class Transform(State):
     '''docstring for Transform.'''
     def __init__(self,
-                 name,
                  report_url=None,
                  content_type='application/text',
                  **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
-        self.name = name
         self.report_url = report_url
         self.content_type = content_type
 
@@ -18,29 +16,29 @@ class Transform(State):
         self._wait_seconds = 0
         self._on_fail = None
 
-    def setup(self):
+    def setup(self, name):
         '''build $.next'''
         setup = {
-            'name': self.name,
+            'name': name,
             'content_type': self.content_type,
             'report_url': self.report_url
         }
 
         return setup
 
-    def states(self):
+    def states(self, name):
         '''compile and return all steps in the transform'''
         steps = {}
 
-        steps[f'{self.name}'] = PassState(
-            Result=self.setup(),
+        steps[f'{name}'] = PassState(
+            Result=self.setup(name),
             ResultPath='$.next',
-            Next=f'{self.name}.2.run'
+            Next=f'{name}.2.run'
         )
 
-        steps[f'{self.name}.2.run'] = TaskState(
+        steps[f'{name}.2.run'] = TaskState(
             Resource=get_arn('lambda', 'function:drench-sdk-run-task'),
-            Next=f'{self.name}.3.wait',
+            Next=f'{name}.3.wait',
             ResultPath='$',
             Catch=[
                 {
@@ -52,15 +50,15 @@ class Transform(State):
 
         )
 
-        steps[f'{self.name}.3.wait'] = WaitState(
+        steps[f'{name}.3.wait'] = WaitState(
             Seconds=self._wait_seconds,
-            Next=f'{self.name}.4.check',
+            Next=f'{name}.4.check',
         )
 
 
-        steps[f'{self.name}.4.check'] = TaskState(
+        steps[f'{name}.4.check'] = TaskState(
             Resource=get_arn('lambda', f'function:drench-sdk-check-task'),
-            Next=f'{self.name}.5.choice',
+            Next=f'{name}.5.choice',
             ResultPath=f'$.result.status',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
@@ -77,7 +75,7 @@ class Transform(State):
             ]
         )
 
-        steps[f'{self.name}.5.choice'] = ChoiceState(
+        steps[f'{name}.5.choice'] = ChoiceState(
             Choices=[
                 {
                     'Or': [
@@ -91,15 +89,15 @@ class Transform(State):
                         }
                     ],
 
-                    'Next': f'{self.name}.6.add_result'
+                    'Next': f'{name}.6.add_result'
                 }
             ],
-            Default=f'{self.name}.3.wait'
+            Default=f'{name}.3.wait'
         )
 
-        steps[f'{self.name}.6.add_result'] = TaskState(
+        steps[f'{name}.6.add_result'] = TaskState(
             Resource=get_arn('lambda', 'function:drench-sdk-add-result'),
-            Next=f'{self.name}.7.choice',
+            Next=f'{name}.7.choice',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
@@ -114,7 +112,7 @@ class Transform(State):
                 }
             ]
         )
-        steps[f'{self.name}.7.choice'] = ChoiceState(
+        steps[f'{name}.7.choice'] = ChoiceState(
             Choices=[
                 {
                     'Variable': f'$.result.status',
@@ -136,11 +134,11 @@ class BatchTransform(Transform):
         self.parameters = parameters
         self._wait_seconds = 60
 
-    def setup(self):
-        setup = super(BatchTransform, self).setup()
+    def setup(self, name):
+        setup = super(BatchTransform, self).setup(name)
         setup['type'] = 'batch'
         setup['params'] = {
-            'jobName': self.name,
+            'jobName': name,
             'jobQueue':self.job_queue,
             'jobDefinition': self.job_definition,
             'parameters': {
@@ -163,8 +161,8 @@ class GlueTransform(Transform):
         self.allocated_capacity = allocated_capacity
         self._wait_seconds = 60
 
-    def setup(self):
-        setup = super(GlueTransform, self).setup()
+    def setup(self, name):
+        setup = super(GlueTransform, self).setup(name)
         setup['type'] = 'glue'
         setup['params'] = {
             'JobName': self.job_name,
@@ -189,8 +187,8 @@ class QueryTransform(Transform):
         self.database = database
         self._wait_seconds = 30
 
-    def setup(self):
-        setup = super(QueryTransform, self).setup()
+    def setup(self, name):
+        setup = super(QueryTransform, self).setup(name)
         setup['type'] = 'query'
         setup['params'] = {
             'QueryString': self.query_string,

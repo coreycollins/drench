@@ -6,9 +6,9 @@ def example_workflow():
     '''main func'''
     workflow = WorkFlow()
 
-    workflow.add_transform(
-        BatchTransform(
-            name='example-batch-workflow',
+    workflow.add_state(
+        name='example-batch-workflow',
+        state=BatchTransform(
             job_definition='sap-job-execution',
             job_queue='production_low',
             parameters={

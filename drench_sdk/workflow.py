@@ -4,6 +4,7 @@ import json
 
 from drench_resources import get_arn, get_resource
 from drench_sdk.states import PassState, State, TaskState
+from drench_sdk.transforms import Transform
 
 UPDATE_END_NAME = '__update'
 INJECT_SNS_TOPIC_NAME = '__inject_sns_topic'
@@ -62,26 +63,36 @@ class WorkFlow(object):
             )
         }
 
-    def add_transform(self, transform):
+    def add_state(self, name, state):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
 
-        if transform.name in [
+        if name in [
                 UPDATE_END_NAME,
                 INJECT_SNS_TOPIC_NAME,
                 INJECT_SNS_SUBJECT_NAME,
                 DEATH_RATTLE_NAME
         ]:
-            raise Exception(f'The transform name {transform.name} is reserved')
+            raise Exception(f'The transform name {name} is reserved')
 
-        if not transform.Next:
-            transform.Next = UPDATE_END_NAME
+        if not state.Next:
+            state.Next = UPDATE_END_NAME
 
-        transform._on_fail = UPDATE_END_NAME #pylint:disable=W0212
+        if isinstance(state, Transform):
+            state._on_fail = UPDATE_END_NAME #pylint:disable=W0212
+            self.sfn['States'] = {**self.sfn['States'], **state.states(name)}
+        elif isinstance(state, TaskState):
+            if not state.Catch:
+                state.Catch = [
+                    {
+                        "ErrorEquals": ["States.ALL"],
+                        "ResultPath": "$.result.status",
+                        "Next": UPDATE_END_NAME
+                    }
+                ]
+            self.sfn['States'][name] = state
 
         if 'StartAt' not in self.sfn:
-            self.sfn['StartAt'] = transform.name
-
-        self.sfn['States'] = {**self.sfn['States'], **transform.states()}
+            self.sfn['StartAt'] = name
 
     def as_dict(self):
         """ return state machine as a dict """

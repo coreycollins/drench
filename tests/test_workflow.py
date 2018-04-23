@@ -10,9 +10,9 @@ def test_workflow():
 
 def test_add_transform():
     workflow = WorkFlow(comment='test', timeout=60, version=1.1)
-    workflow.add_transform(
-        GlueTransform(
-            name='example-glue-job',
+    workflow.add_state(
+        name='example-glue-job',
+        state=GlueTransform(
             job_name='example-job-def',
             allocated_capacity=2
         )
