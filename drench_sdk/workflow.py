@@ -2,7 +2,7 @@
 
 import json
 
-from drench_resources import get_arn
+from drench_resources import get_arn, get_resource
 from drench_sdk.states import PassState, State, TaskState
 
 UPDATE_END_NAME = '__update'
@@ -45,7 +45,7 @@ class WorkFlow(object):
             ),
 
             INJECT_SNS_TOPIC_NAME: PassState(
-                Result=get_arn('sns', 'drench-sdk-sfn-fail'),
+                Result=get_arn('sns', get_resource('drench-sdk-sfn-fail')),
                 ResultPath='$.sns.topic_arn',
                 Next=INJECT_SNS_SUBJECT_NAME
             ),
