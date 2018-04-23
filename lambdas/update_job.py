@@ -3,7 +3,7 @@ import json
 import boto3
 
 SUCCESS_INDICATOR = 'pass'
-SUCCESS_STATE = 'finish'
+SUCCESS_STATE = 'finished'
 FAILURE_STATE = 'failed'
 
 def handler(event, context): # pylint:disable=unused-argument
