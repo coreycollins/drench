@@ -7,6 +7,6 @@ def handler(event, context): #pylint:disable=unused-argument
 
     client.publish(
         TopicArn=event['sns']['topic_arn'],
-        Message=event['sns']['message'],
+        Message=str(event['sns']['message']),
         Subject=event['sns']['subject']
     )
