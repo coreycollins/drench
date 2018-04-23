@@ -44,14 +44,14 @@ class WorkFlow(object):
             ),
             INJECT_SNS_PARAMS_NAME: PassState(
                 Result={
-                    'topic_arn': get_arn('sns', 'drench-sdk-send-sns'),
+                    'topic_arn': get_arn('sns', 'drench_sdk_sfn_fail'),
                     'subject': 'Drench Workflow communication failure'
                 },
                 ResultPath='$.sns',
                 Next=DEATH_RATTLE_NAME
             ),
             DEATH_RATTLE_NAME: TaskState(
-                Resource=get_arn('lambda', 'function:drench-sdk-fail-sns'),
+                Resource=get_arn('lambda', 'function:drench-sdk-send-sns'),
                 End=True
             )
         }
