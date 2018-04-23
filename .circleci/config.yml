@@ -34,7 +34,7 @@ jobs:
             pip install --user boto3
       - deploy:
           name: Deploy to AWS
-          command: python scripts/deploy.py
+          command: python scripts/deploy.py canary
   deploy-prod:
     working_directory: /tmp/project
     docker:
@@ -49,7 +49,7 @@ jobs:
       - deploy:
           name: Deploy to AWS
           command: |
-            python scripts/deploy.py
+            python scripts/deploy.py $CIRCLE_TAG
             python scripts/publish.py
 
 workflows:

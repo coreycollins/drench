@@ -26,7 +26,7 @@ class Transform(State):
 
         return setup
 
-    def states(self, name):
+    def states(self, name, lambda_version):
         '''compile and return all steps in the transform'''
         steps = {}
 
@@ -37,7 +37,7 @@ class Transform(State):
         )
 
         steps[f'{name}.2.run'] = TaskState(
-            Resource=get_arn('lambda', 'function:drench-sdk-run-task'),
+            Resource=get_arn('lambda', f'function:drench-sdk-run-task:{lambda_version}'),
             Next=f'{name}.3.wait',
             ResultPath='$',
             Catch=[
@@ -57,7 +57,7 @@ class Transform(State):
 
 
         steps[f'{name}.4.check'] = TaskState(
-            Resource=get_arn('lambda', f'function:drench-sdk-check-task'),
+            Resource=get_arn('lambda', f'function:drench-sdk-check-task:{lambda_version}'),
             Next=f'{name}.5.choice',
             ResultPath=f'$.result.status',
             Retry=[{
@@ -96,7 +96,7 @@ class Transform(State):
         )
 
         steps[f'{name}.6.add_result'] = TaskState(
-            Resource=get_arn('lambda', 'function:drench-sdk-add-result'),
+            Resource=get_arn('lambda', 'function:drench-sdk-add-result:{lambda_version}'),
             Next=f'{name}.7.choice',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
