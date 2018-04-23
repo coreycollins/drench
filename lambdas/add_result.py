@@ -20,12 +20,14 @@ def handler(event, context): # pylint:disable=unused-argument
     req_payload = {
         'body': json.dumps(req_body),
         'requestContext': {
-            'authorizer': {
-                'principalId': event["principal_id"]
-                }
-            },
+            'identity': {
+                'user': 'internal' # This must be set for the API to grant access
+            }
+        },
         'queryStringParameters': {},
-        'headers': {},
+        'headers': {
+            'x-drench-account': event["principal_id"]
+        },
         'httpMethod': 'PUT',
         'path': f'/jobs/{event["job_id"]}/steps'
     }
