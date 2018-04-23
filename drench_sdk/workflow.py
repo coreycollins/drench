@@ -6,7 +6,8 @@ from drench_resources import get_arn
 from drench_sdk.states import PassState, State, TaskState
 
 UPDATE_END_NAME = '__update'
-INJECT_SNS_PARAMS_NAME = '__inject_sns_params'
+INJECT_SNS_TOPIC_NAME = '__inject_sns_topic'
+INJECT_SNS_SUBJECT_NAME = '__inject_sns_subject'
 DEATH_RATTLE_NAME = '__death_rattle'
 
 class WorkFlow(object):
@@ -37,19 +38,24 @@ class WorkFlow(object):
                 Catch=[
                     {
                         "ErrorEquals": ["States.ALL"],
-                        "ResultPath": "$.err_info",
-                        "Next": INJECT_SNS_PARAMS_NAME,
+                        "ResultPath": "$.sns.message",
+                        "Next": INJECT_SNS_TOPIC_NAME
                     }
                 ]
             ),
-            INJECT_SNS_PARAMS_NAME: PassState(
-                Result={
-                    'topic_arn': get_arn('sns', 'drench_sdk_sfn_fail'),
-                    'subject': 'Drench Workflow communication failure'
-                },
-                ResultPath='$.sns',
+
+            INJECT_SNS_TOPIC_NAME: PassState(
+                Result=get_arn('sns', 'drench-sdk-sfn-fail'),
+                ResultPath='$.sns.topic_arn',
+                Next=INJECT_SNS_SUBJECT_NAME
+            ),
+
+            INJECT_SNS_SUBJECT_NAME: PassState(
+                Result='Drench Workflow communication failure',
+                ResultPath='$.sns.subject',
                 Next=DEATH_RATTLE_NAME
             ),
+
             DEATH_RATTLE_NAME: TaskState(
                 Resource=get_arn('lambda', 'function:drench-sdk-send-sns'),
                 End=True
@@ -59,7 +65,12 @@ class WorkFlow(object):
     def add_transform(self, transform):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
 
-        if transform.name in [UPDATE_END_NAME, INJECT_SNS_PARAMS_NAME, DEATH_RATTLE_NAME]:
+        if transform.name in [
+                UPDATE_END_NAME,
+                INJECT_SNS_TOPIC_NAME,
+                INJECT_SNS_SUBJECT_NAME,
+                DEATH_RATTLE_NAME
+        ]:
             raise Exception(f'The transform name {transform.name} is reserved')
 
         if not transform.Next:
