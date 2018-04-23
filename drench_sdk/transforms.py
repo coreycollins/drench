@@ -96,7 +96,7 @@ class Transform(State):
         )
 
         steps[f'{name}.6.add_result'] = TaskState(
-            Resource=get_arn('lambda', 'function:drench-sdk-add-result:{lambda_version}'),
+            Resource=get_arn('lambda', f'function:drench-sdk-add-result:{lambda_version}'),
             Next=f'{name}.7.choice',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
