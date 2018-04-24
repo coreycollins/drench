@@ -49,7 +49,7 @@ jobs:
       - deploy:
           name: Deploy to AWS
           command: |
-            python scripts/deploy.py $CIRCLE_TAG
+            python scripts/deploy.py v1
             python scripts/publish.py
 
 workflows:
