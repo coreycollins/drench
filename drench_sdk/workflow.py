@@ -79,8 +79,10 @@ class WorkFlow(object):
             state.Next = UPDATE_END_NAME
 
         if isinstance(state, Transform):
-            state._on_fail = UPDATE_END_NAME #pylint:disable=W0212
-            self.sfn['States'] = {**self.sfn['States'], **state.states(name)}
+            self.sfn['States'] = {
+                **self.sfn['States'],
+                **state.states(name, UPDATE_END_NAME, self.sdk_version)
+            }
         elif isinstance(state, TaskState): #users adding TaskStates must know lambda version to call
             if not state.Catch:
                 state.Catch = [
