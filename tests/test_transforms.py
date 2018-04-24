@@ -8,7 +8,10 @@ def test_batch_transform():
         job_definition='bar'
     )
 
-    assert len(batch_transform.states('example-batch-job')) == 7
+    built = batch_transform.states('example-batch-job', 'fail_state', 'canary')
+
+    assert len(built) == 7
+    assert built['example-batch-job.2.run'].Resource.endswith(':canary')
     assert batch_transform.job_definition == 'bar'
 
 def test_glue_transform():
@@ -18,7 +21,9 @@ def test_glue_transform():
         allocated_capacity=2
     )
 
-    assert len(glue_transform.states('example-glue-job')) == 7
+    built = glue_transform.states('example-glue-job', 'fail_state', 'canary')
+
+    assert len(built) == 7
     assert glue_transform.allocated_capacity == 2
 
 def test_query_transform():
@@ -28,5 +33,7 @@ def test_query_transform():
         database='bar'
     )
 
-    assert len(query_transform.states('example-query-job')) == 7
+    built = query_transform.states('example-query-job', 'fail_state', 'canary')
+
+    assert len(built) == 7
     assert query_transform.database == 'bar'

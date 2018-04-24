@@ -12,10 +12,6 @@ class Transform(State):
         self.report_url = report_url
         self.content_type = content_type
 
-        # defaults to be over-ridden
-        self._wait_seconds = 0
-        self._on_fail = None
-
     def setup(self, name):
         '''build $.next'''
         setup = {
@@ -26,7 +22,7 @@ class Transform(State):
 
         return setup
 
-    def states(self, name):
+    def states(self, name, on_fail, sdk_version):
         '''compile and return all steps in the transform'''
         steps = {}
 
@@ -37,27 +33,27 @@ class Transform(State):
         )
 
         steps[f'{name}.2.run'] = TaskState(
-            Resource=get_arn('lambda', 'function:drench-sdk-run-task'),
+            Resource=get_arn('lambda', f'function:drench-sdk-run-task:{sdk_version}'),
             Next=f'{name}.3.wait',
             ResultPath='$',
             Catch=[
                 {
                     "ErrorEquals": ["States.ALL"],
                     "ResultPath": "$.result.status",
-                    "Next": self._on_fail
+                    "Next": on_fail
                 }
             ]
 
         )
 
         steps[f'{name}.3.wait'] = WaitState(
-            Seconds=self._wait_seconds,
+            Seconds=60,
             Next=f'{name}.4.check',
         )
 
 
         steps[f'{name}.4.check'] = TaskState(
-            Resource=get_arn('lambda', f'function:drench-sdk-check-task'),
+            Resource=get_arn('lambda', f'function:drench-sdk-check-task:{sdk_version}'),
             Next=f'{name}.5.choice',
             ResultPath=f'$.result.status',
             Retry=[{
@@ -70,7 +66,7 @@ class Transform(State):
                 {
                     "ErrorEquals": ["States.ALL"],
                     "ResultPath": "$.result.status",
-                    "Next": self._on_fail
+                    "Next": on_fail
                 }
             ]
         )
@@ -96,7 +92,7 @@ class Transform(State):
         )
 
         steps[f'{name}.6.add_result'] = TaskState(
-            Resource=get_arn('lambda', 'function:drench-sdk-add-result'),
+            Resource=get_arn('lambda', f'function:drench-sdk-add-result:{sdk_version}'),
             Next=f'{name}.7.choice',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
@@ -108,7 +104,7 @@ class Transform(State):
                 {
                     "ErrorEquals": ["States.ALL"],
                     "ResultPath": "$.result.status",
-                    "Next": self._on_fail
+                    "Next": on_fail
                 }
             ]
         )
@@ -120,7 +116,7 @@ class Transform(State):
                     'Next': self.Next
                 }
             ],
-            Default=self._on_fail
+            Default=on_fail
             )
 
         return steps
@@ -132,7 +128,6 @@ class BatchTransform(Transform):
         self.job_queue = job_queue
         self.job_definition = job_definition
         self.parameters = parameters
-        self._wait_seconds = 60
 
     def setup(self, name):
         setup = super(BatchTransform, self).setup(name)
@@ -159,7 +154,6 @@ class GlueTransform(Transform):
         self.job_name = job_name
         self.arguments = arguments
         self.allocated_capacity = allocated_capacity
-        self._wait_seconds = 60
 
     def setup(self, name):
         setup = super(GlueTransform, self).setup(name)
@@ -185,7 +179,6 @@ class QueryTransform(Transform):
         super(QueryTransform, self).__init__(**kwargs)
         self.query_string = query_string
         self.database = database
-        self._wait_seconds = 30
 
     def setup(self, name):
         setup = super(QueryTransform, self).setup(name)

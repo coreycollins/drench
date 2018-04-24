@@ -6,9 +6,13 @@ import zipfile
 import subprocess
 import io
 import re
+from sys import argv
 import boto3
 
-def main():
+DRENCH_SDK_LAMBDAS = ['run-task', 'check-task', 'add-rresult', 'update-job', 'send-sns']
+DEPLOY_ALIAS = argv[1]
+
+def main(): #pylint:disable=too-many-locals
     """ main method """
     lambda_path = os.path.join(os.curdir, 'lambdas')
     build_path = os.path.join(os.curdir, '.build')
@@ -48,35 +52,18 @@ def main():
 
     lamba_client = boto3.client('lambda')
 
-    # Run Task
-    lamba_client.update_function_code(
-        FunctionName='drench-sdk-run-task',
-        ZipFile=buf.getvalue()
-    )
-
-    # Check Task
-    lamba_client.update_function_code(
-        FunctionName='drench-sdk-check-task',
-        ZipFile=buf.getvalue()
-    )
-
-    # Add Result
-    lamba_client.update_function_code(
-        FunctionName='drench-sdk-add-result',
-        ZipFile=buf.getvalue()
-    )
-
-    # Job Update
-    lamba_client.update_function_code(
-        FunctionName='drench-sdk-update-job',
-        ZipFile=buf.getvalue()
-    )
-
-    # Send SNS on failure
-    lamba_client.update_function_code(
-        FunctionName='drench-sdk-send-sns',
-        ZipFile=buf.getvalue()
-    )
+    for drench_lambda in DRENCH_SDK_LAMBDAS:
+        func_name = f'drench-sdk-{drench_lambda}'
+        update_resp = lamba_client.update_function_code(
+            FunctionName=func_name,
+            ZipFile=buf.getvalue(),
+            Publish=True
+        )
+        lamba_client.update_alias(
+            FunctionName=func_name,
+            Name=DEPLOY_ALIAS,
+            FunctionVersion=update_resp['Version']
+        )
 
 if __name__ == '__main__':
     main()
