@@ -11,7 +11,7 @@ def test_workflow():
     assert len(workflow.sfn['States']) == 4
 
 def test_add_transform():
-    workflow = WorkFlow('canary', comment='test', timeout=60, version=1.1)
+    workflow = WorkFlow()
     workflow.add_state(
         name='example-glue-job',
         state=GlueTransform(
