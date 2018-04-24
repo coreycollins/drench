@@ -9,7 +9,7 @@ import re
 from sys import argv
 import boto3
 
-DRENCH_SDK_LAMBDAS = ['run-task', 'check-task', 'add-rresult', 'update-job', 'send-sns']
+DRENCH_SDK_LAMBDAS = ['run-task', 'check-task', 'add-result', 'update-job', 'send-sns']
 DEPLOY_ALIAS = argv[1]
 
 def main(): #pylint:disable=too-many-locals
@@ -50,20 +50,32 @@ def main(): #pylint:disable=too-many-locals
                 path = os.path.join(base, file)
                 myzip.write(path, path.replace(build_path + '/', ''))
 
-    lamba_client = boto3.client('lambda')
+    lambda_client = boto3.client('lambda')
 
     for drench_lambda in DRENCH_SDK_LAMBDAS:
         func_name = f'drench-sdk-{drench_lambda}'
-        update_resp = lamba_client.update_function_code(
+        update_resp = lambda_client.update_function_code(
             FunctionName=func_name,
             ZipFile=buf.getvalue(),
             Publish=True
         )
-        lamba_client.update_alias(
-            FunctionName=func_name,
-            Name=DEPLOY_ALIAS,
-            FunctionVersion=update_resp['Version']
-        )
+
+        try:
+            lambda_client.get_alias( #check that lambda exists
+                FunctionName=func_name,
+                Name=DEPLOY_ALIAS
+            )
+            lambda_client.update_alias( #then update it
+                FunctionName=func_name,
+                Name=DEPLOY_ALIAS,
+                FunctionVersion=update_resp['Version']
+            )
+        except lambda_client.exceptions.ResourceNotFoundException:
+            lambda_client.create_alias( #othwerise create it
+                FunctionName=func_name,
+                Name=DEPLOY_ALIAS,
+                FunctionVersion=update_resp['Version']
+            )
 
 if __name__ == '__main__':
     main()
