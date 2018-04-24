@@ -61,17 +61,13 @@ def main(): #pylint:disable=too-many-locals
         )
 
         try:
-            lambda_client.get_alias( #check that lambda exists
-                FunctionName=func_name,
-                Name=DEPLOY_ALIAS
-            )
-            lambda_client.update_alias( #then update it
+            lambda_client.update_alias(
                 FunctionName=func_name,
                 Name=DEPLOY_ALIAS,
                 FunctionVersion=update_resp['Version']
             )
         except lambda_client.exceptions.ResourceNotFoundException:
-            lambda_client.create_alias( #othwerise create it
+            lambda_client.create_alias(
                 FunctionName=func_name,
                 Name=DEPLOY_ALIAS,
                 FunctionVersion=update_resp['Version']
