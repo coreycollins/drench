@@ -4,11 +4,12 @@ from drench_sdk import BatchTransform, GlueTransform, QueryTransform
 def test_batch_transform():
     '''test batch transform constructor'''
     batch_transform = BatchTransform(
+        sdk_version='canary',
         job_queue='foo',
         job_definition='bar'
     )
 
-    built = batch_transform.states('example-batch-job', 'canary')
+    built = batch_transform.states('example-batch-job')
 
     assert len(built) == 7
     assert built['example-batch-job.2.run'].Resource.endswith(':canary')
@@ -21,10 +22,10 @@ def test_glue_transform():
         allocated_capacity=2
     )
 
-    built = glue_transform.states('example-glue-job', 'canary')
+    built = glue_transform.states('example-glue-job')
 
     assert len(built) == 7
-    assert built['example-glue-job.2.run'].Resource.endswith(':canary')
+    assert built['example-glue-job.2.run'].Resource.endswith(':v1')
     assert glue_transform.allocated_capacity == 2
 
 def test_query_transform():
@@ -34,8 +35,8 @@ def test_query_transform():
         database='bar'
     )
 
-    built = query_transform.states('example-query-job', 'canary')
+    built = query_transform.states('example-query-job')
 
     assert len(built) == 7
-    assert built['example-query-job.2.run'].Resource.endswith(':canary')
+    assert built['example-query-job.2.run'].Resource.endswith(':v1')
     assert query_transform.database == 'bar'

@@ -14,7 +14,7 @@ DEATH_RATTLE_NAME = '__death_rattle'
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self, sdk_version, comment=None, timeout=None, version=None):
+    def __init__(self, sdk_version='v1', comment=None, timeout=None, version=None):
         self.sfn = {}
         self.sdk_version = sdk_version
 
@@ -80,7 +80,7 @@ class WorkFlow(object):
 
         if isinstance(state, Transform):
             state._on_fail = UPDATE_END_NAME #pylint:disable=W0212
-            self.sfn['States'] = {**self.sfn['States'], **state.states(name, self.sdk_version)}
+            self.sfn['States'] = {**self.sfn['States'], **state.states(name)}
         elif isinstance(state, TaskState): #users adding TaskStates must know lambda version to call
             if not state.Catch:
                 state.Catch = [
