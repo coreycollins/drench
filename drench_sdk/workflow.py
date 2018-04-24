@@ -81,7 +81,11 @@ class WorkFlow(object):
         if isinstance(state, Transform):
             self.sfn['States'] = {
                 **self.sfn['States'],
-                **state.states(name, UPDATE_END_NAME, self.sdk_version)
+                **state.states(
+                    name=name,
+                    on_fail=UPDATE_END_NAME,
+                    sdk_version=self.sdk_version
+                )
             }
         elif isinstance(state, TaskState): #users adding TaskStates must know lambda version to call
             if not state.Catch:
