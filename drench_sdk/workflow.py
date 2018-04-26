@@ -6,10 +6,11 @@ from drench_resources import get_arn, get_resource
 from drench_sdk.states import PassState, State, TaskState
 from drench_sdk.transforms import Transform
 
-UPDATE_END_NAME = '__update'
-INJECT_SNS_TOPIC_NAME = '__inject_sns_topic'
-INJECT_SNS_SUBJECT_NAME = '__inject_sns_subject'
-DEATH_RATTLE_NAME = '__death_rattle'
+BUILD_UPDATE = '__build_update'
+UPDATE_END = '__update'
+INJECT_SNS_TOPIC = '__inject_sns_topic'
+INJECT_SNS_SUBJECT = '__inject_sns_subject'
+DEATH_RATTLE = '__death_rattle'
 
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
@@ -28,7 +29,17 @@ class WorkFlow(object):
             self.sfn['Version'] = version
 
         self.sfn['States'] = {
-            UPDATE_END_NAME: TaskState(
+            BUILD_UPDATE: PassState(
+                Result={
+                    'body':{},
+                    'method': 'PUT',
+                    'path': '/jobs/$.job_id/state/$.result.status'
+                },
+                ResultPath='$.api_call',
+                Next=UPDATE_END
+            ),
+
+            UPDATE_END: TaskState(
                 Resource=get_arn('lambda', f'function:drench-sdk-update-job'),
                 End=True,
                 Retry=[{
@@ -41,24 +52,24 @@ class WorkFlow(object):
                     {
                         "ErrorEquals": ["States.ALL"],
                         "ResultPath": "$.sns.message",
-                        "Next": INJECT_SNS_TOPIC_NAME
+                        "Next": INJECT_SNS_TOPIC
                     }
                 ]
             ),
 
-            INJECT_SNS_TOPIC_NAME: PassState(
+            INJECT_SNS_TOPIC: PassState(
                 Result=get_arn('sns', get_resource('drench-sdk-sfn-fail')),
                 ResultPath='$.sns.topic_arn',
-                Next=INJECT_SNS_SUBJECT_NAME
+                Next=INJECT_SNS_SUBJECT
             ),
 
-            INJECT_SNS_SUBJECT_NAME: PassState(
+            INJECT_SNS_SUBJECT: PassState(
                 Result='Drench Workflow communication failure',
                 ResultPath='$.sns.subject',
-                Next=DEATH_RATTLE_NAME
+                Next=DEATH_RATTLE
             ),
 
-            DEATH_RATTLE_NAME: TaskState(
+            DEATH_RATTLE: TaskState(
                 Resource=get_arn('lambda', 'function:drench-sdk-send-sns'),
                 End=True
             )
@@ -68,22 +79,23 @@ class WorkFlow(object):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
 
         if name in [
-                UPDATE_END_NAME,
-                INJECT_SNS_TOPIC_NAME,
-                INJECT_SNS_SUBJECT_NAME,
-                DEATH_RATTLE_NAME
+                BUILD_UPDATE,
+                UPDATE_END,
+                INJECT_SNS_TOPIC,
+                INJECT_SNS_SUBJECT,
+                DEATH_RATTLE
         ]:
             raise Exception(f'The transform name {name} is reserved')
 
         if not state.Next:
-            state.Next = UPDATE_END_NAME
+            state.Next = BUILD_UPDATE
 
         if isinstance(state, Transform):
             self.sfn['States'] = {
                 **self.sfn['States'],
                 **state.states(
                     name=name,
-                    on_fail=UPDATE_END_NAME,
+                    on_fail=BUILD_UPDATE,
                     sdk_version=self.sdk_version
                 )
             }
@@ -93,7 +105,7 @@ class WorkFlow(object):
                     {
                         "ErrorEquals": ["States.ALL"],
                         "ResultPath": "$.result.status",
-                        "Next": UPDATE_END_NAME
+                        "Next": UPDATE_END
                     }
                 ]
             self.sfn['States'][name] = state

@@ -5,19 +5,30 @@ from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceStat
 class Transform(State):
     '''docstring for Transform.'''
     def __init__(self,
-                 report_url=None,
+                 report_type=None,
                  content_type='application/text',
                  **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
-        self.report_url = report_url
+        self.report_type = report_type
         self.content_type = content_type
+        self._default_steps = [
+            'run_task',
+            'wait',
+            'check_task',
+            'check_choice',
+            'build_generate_report',
+            'generate_report',
+            'build_add_result',
+            'add_result',
+            'finish_choice'
+        ]
 
     def setup(self, name):
         '''build $.next'''
         setup = {
             'name': name,
             'content_type': self.content_type,
-            'report_url': self.report_url
+            'report_type': self.report_type
         }
 
         return setup
@@ -26,15 +37,17 @@ class Transform(State):
         '''compile and return all steps in the transform'''
         steps = {}
 
-        steps[f'{name}'] = PassState(
+        step_names = {step_name: f'{name}.{step_name}' for step_name in self._default_steps}
+
+        steps[name] = PassState(
             Result=self.setup(name),
             ResultPath='$.next',
-            Next=f'{name}.2.run'
+            Next=step_names['run_task']
         )
 
-        steps[f'{name}.2.run'] = TaskState(
+        steps[step_names['run_task']] = TaskState(
             Resource=get_arn('lambda', f'function:drench-sdk-run-task:{sdk_version}'),
-            Next=f'{name}.3.wait',
+            Next=step_names['wait'],
             ResultPath='$',
             Catch=[
                 {
@@ -46,15 +59,15 @@ class Transform(State):
 
         )
 
-        steps[f'{name}.3.wait'] = WaitState(
+        steps[step_names['wait']] = WaitState(
             Seconds=60,
-            Next=f'{name}.4.check',
+            Next=step_names['check_task'],
         )
 
 
-        steps[f'{name}.4.check'] = TaskState(
+        steps[step_names['check_task']] = TaskState(
             Resource=get_arn('lambda', f'function:drench-sdk-check-task:{sdk_version}'),
-            Next=f'{name}.5.choice',
+            Next=step_names['check_choice'],
             ResultPath=f'$.result.status',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
@@ -71,29 +84,84 @@ class Transform(State):
             ]
         )
 
-        steps[f'{name}.5.choice'] = ChoiceState(
+        steps[step_names['check_choice']] = ChoiceState(
             Choices=[
                 {
                     'Or': [
                         {
                             'Variable': f'$.result.status',
-                            'StringEquals': 'fail',
+                            'StringEquals': 'failed',
                         },
                         {
                             'Variable': f'$.result.status',
-                            'StringEquals': 'pass',
+                            'StringEquals': 'finished',
                         }
                     ],
-
-                    'Next': f'{name}.6.add_result'
+                    'Next': step_names['build_generate_report' if self.report_type else 'build_add_result'] #pylint:disable=line-too-long
                 }
             ],
-            Default=f'{name}.3.wait'
+            Default=step_names['wait'],
         )
 
-        steps[f'{name}.6.add_result'] = TaskState(
+        if self.report_type:
+            steps[step_names['build_generate_report']] = PassState(
+                Result={
+                    'path':'/reports/generate_report',
+                    'body':{
+                        'out_path': '$.next.out_path',
+                        'type': '$.report_type'
+                        },
+                    'method': 'POST'
+                },
+                ResultPath='$.api_call',
+                Next=step_names['generate_report']
+            )
+
+            steps[step_names['generate_report']] = TaskState(
+                Resource=get_arn('lambda', f'function:drench-sdk-call-api:{sdk_version}'),
+                Next=step_names['build_add_result'],
+                ResultPath='$.result.report_url',
+                Retry=[{
+                    'ErrorEquals': ['Lambda.Unknown'],
+                    'IntervalSeconds': 30,
+                    'MaxAttempts': 5,
+                    'BackoffRate': 1.5
+                }],
+                Catch=[
+                    {
+                        "ErrorEquals": ["States.ALL"],
+                        "ResultPath": "$.result.status",
+                        "Next": on_fail
+                    }
+                ]
+            )
+
+        added_step = {
+            'name': '$.next.name',
+            'out_path': '$.next.out_path',
+            'content_type': '$.next.content_type',
+            'status': '$.result.status',
+        }
+
+        if self.report_type:
+            added_step['report_url'] = '$.result.report_url'
+
+
+        steps[step_names['build_add_result']] = PassState(
+            Result={
+                'path':'/jobs/$.job_id/steps',
+                'body':{
+                    'step':added_step,
+                },
+                'method': 'PUT'
+            },
+            ResultPath='$.api_call',
+            Next=step_names['add_result']
+        )
+
+        steps[step_names['add_result']] = TaskState(
             Resource=get_arn('lambda', f'function:drench-sdk-add-result:{sdk_version}'),
-            Next=f'{name}.7.choice',
+            Next=step_names['finish_choice'],
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
@@ -108,7 +176,7 @@ class Transform(State):
                 }
             ]
         )
-        steps[f'{name}.7.choice'] = ChoiceState(
+        steps[step_names['finish_choice']] = ChoiceState(
             Choices=[
                 {
                     'Variable': f'$.result.status',

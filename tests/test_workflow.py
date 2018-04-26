@@ -8,7 +8,7 @@ def test_workflow():
     """main func"""
     workflow = WorkFlow(comment='test', timeout=60, version=1.1)
 
-    assert len(workflow.sfn['States']) == 4
+    assert len(workflow.sfn['States']) == 5
 
 def test_add_transform():
     workflow = WorkFlow()
@@ -20,7 +20,7 @@ def test_add_transform():
         )
     )
 
-    assert len(workflow.sfn['States']) == 11
+    assert len(workflow.sfn['States']) == 13
 
 def test_to_json():
     workflow = WorkFlow()
@@ -34,7 +34,7 @@ def test_to_json():
 
     w_f = json.loads(workflow.to_json())
 
-    assert w_f['States']['example-glue-job.2.run']['Resource'].endswith(':v1')
+    assert w_f['States']['example-glue-job.run_task']['Resource'].endswith(':v1')
 
 def test_reserved_name():
     with pytest.raises(Exception) as error:

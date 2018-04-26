@@ -1,24 +1,15 @@
 '''update drench-api with stepp function step results'''
 import json
 import boto3
+from lambdas.sdk_util import build_path, find_subs
 
 def handler(event, context): # pylint:disable=unused-argument
     '''lambda interface'''
-
-    req_body = {
-        'step': {
-            'name': event['next']['name'],
-            'out_path': event['next']['out_path'],
-            'content_type': event['next']['content_type'],
-            'status': event['result']['status']
-        }
-    }
-
-    if 'report_url' in event['next']:
-        req_body['step']['report_url'] = event['next']['report_url']
+    # Substitute parameters
+    event['api_call']['body'] = find_subs(event['api_call']['body'], event)
 
     req_payload = {
-        'body': json.dumps(req_body),
+        'body': json.dumps(event['api_call']['body']),
         'requestContext': {
             'identity': {
                 'user': 'internal' # This must be set for the API to grant access
@@ -28,8 +19,8 @@ def handler(event, context): # pylint:disable=unused-argument
         'headers': {
             'x-drench-account': event["principal_id"]
         },
-        'httpMethod': 'PUT',
-        'path': f'/jobs/{event["job_id"]}/steps'
+        'httpMethod': event['api_call']['method'],
+        'path': build_path(event['api_call']['path'], event)
     }
 
     client = boto3.client('lambda', region_name='us-east-1')
@@ -44,4 +35,4 @@ def handler(event, context): # pylint:disable=unused-argument
     if res_payload['statusCode'] != 200:
         raise Exception(res_payload['body'])
 
-    return event
+    return res_payload['body']

@@ -1,7 +1,6 @@
 #pylint:disable=missing-docstring
 from lambdas.check_task import handler
 
-
 def test_check_query():
     event = {
         'job_id': 1234,
@@ -30,7 +29,7 @@ def test_check_query():
     }
 
     res = handler(event, {})
-    assert res == 'pass'
+    assert res == 'finished'
 
 def test_run_batch():
     event = {
@@ -60,7 +59,7 @@ def test_run_batch():
     }
 
     res = handler(event, {})
-    assert res == 'pass'
+    assert res == 'finished'
 
 def test_run_glue():
     event = {
@@ -89,4 +88,4 @@ def test_run_glue():
     }
 
     res = handler(event, {})
-    assert res == 'pass'
+    assert res == 'finished'
