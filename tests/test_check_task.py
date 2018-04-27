@@ -29,7 +29,7 @@ def test_check_query():
     }
 
     res = handler(event, {})
-    assert res == 'finished'
+    assert res == 'pass'
 
 def test_run_batch():
     event = {
@@ -59,7 +59,7 @@ def test_run_batch():
     }
 
     res = handler(event, {})
-    assert res == 'finished'
+    assert res == 'pass'
 
 def test_run_glue():
     event = {
@@ -88,4 +88,4 @@ def test_run_glue():
     }
 
     res = handler(event, {})
-    assert res == 'finished'
+    assert res == 'pass'

@@ -2,12 +2,12 @@
 import boto3
 
 STATUS_INDEX = {
-    'SUCCEEDED': 'finished',
+    'SUCCEEDED': 'pass',
 
-    'FAILED': 'failed',
-    'CANCELED':'failed',
-    'TIMEOUT':'failed',
-    'STOPPED': 'failed',
+    'FAILED': 'fail',
+    'CANCELED':'fail',
+    'TIMEOUT':'fail',
+    'STOPPED': 'fail',
 
     'QUEUED': 'running',
     'RUNNING': 'running',

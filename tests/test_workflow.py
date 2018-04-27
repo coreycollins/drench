@@ -8,7 +8,7 @@ def test_workflow():
     """main func"""
     workflow = WorkFlow(comment='test', timeout=60, version=1.1)
 
-    assert len(workflow.sfn['States']) == 5
+    assert len(workflow.sfn['States']) == 8
 
 def test_add_transform():
     workflow = WorkFlow()
@@ -20,7 +20,7 @@ def test_add_transform():
         )
     )
 
-    assert len(workflow.sfn['States']) == 13
+    assert len(workflow.sfn['States']) == 16
 
 def test_to_json():
     workflow = WorkFlow()

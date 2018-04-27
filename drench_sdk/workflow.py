@@ -3,9 +3,12 @@
 import json
 
 from drench_resources import get_arn, get_resource
-from drench_sdk.states import PassState, State, TaskState
+from drench_sdk.states import  ChoiceState, PassState, State, TaskState
 from drench_sdk.transforms import Transform
 
+STATUS_TRANSLATE = '__status_translate'
+STATUS_FINISHED = '__status_finished'
+STATUS_FAILED = '__status_failed'
 BUILD_UPDATE = '__build_update'
 UPDATE_END = '__update'
 INJECT_SNS_TOPIC = '__inject_sns_topic'
@@ -29,6 +32,29 @@ class WorkFlow(object):
             self.sfn['Version'] = version
 
         self.sfn['States'] = {
+            STATUS_TRANSLATE: ChoiceState(
+                Choices=[
+                    {
+                        'Variable': f'$.result.status',
+                        'StringEquals': 'pass',
+                        'Next': STATUS_FINISHED
+                    }
+                ],
+                Default=STATUS_FAILED
+            ),
+
+            STATUS_FINISHED: PassState(
+                Result='finished',
+                ResultPath='$.result.status',
+                Next=BUILD_UPDATE
+            ),
+
+            STATUS_FAILED: PassState(
+                Result='failed',
+                ResultPath='$.result.status',
+                Next=BUILD_UPDATE
+            ),
+
             BUILD_UPDATE: PassState(
                 Result={
                     'body':{},
@@ -79,6 +105,9 @@ class WorkFlow(object):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
 
         if name in [
+                STATUS_TRANSLATE,
+                STATUS_FINISHED,
+                STATUS_FAILED,
                 BUILD_UPDATE,
                 UPDATE_END,
                 INJECT_SNS_TOPIC,
@@ -88,14 +117,14 @@ class WorkFlow(object):
             raise Exception(f'The transform name {name} is reserved')
 
         if not state.Next:
-            state.Next = BUILD_UPDATE
+            state.Next = STATUS_TRANSLATE 
 
         if isinstance(state, Transform):
             self.sfn['States'] = {
                 **self.sfn['States'],
                 **state.states(
                     name=name,
-                    on_fail=BUILD_UPDATE,
+                    on_fail=STATUS_TRANSLATE,
                     sdk_version=self.sdk_version
                 )
             }
