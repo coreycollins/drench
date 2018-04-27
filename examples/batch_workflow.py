@@ -4,7 +4,7 @@ from drench_sdk.transforms import BatchTransform
 
 def example_workflow():
     '''main func'''
-    workflow = WorkFlow()
+    workflow = WorkFlow(sdk_version='canary')
 
     workflow.add_state(
         name='example-batch-workflow',
