@@ -2,7 +2,7 @@
 
 import json
 
-from drench_resources import get_arn, get_resource
+from drench_resources import get_arn
 from drench_sdk.states import  ChoiceState, PassState, State, TaskState
 from drench_sdk.transforms import Transform
 
@@ -66,7 +66,7 @@ class WorkFlow(object):
             ),
 
             UPDATE_END: TaskState(
-                Resource=get_arn('lambda', f'function:drench-sdk-update-job'),
+                Resource=get_arn('lambda', f'function:drench-sdk-call-api:{sdk_version}'),
                 End=True,
                 Retry=[{
                     'ErrorEquals': ['Lambda.Unknown'],
@@ -84,7 +84,7 @@ class WorkFlow(object):
             ),
 
             INJECT_SNS_TOPIC: PassState(
-                Result=get_arn('sns', get_resource('drench-sdk-sfn-fail')),
+                Result=get_arn('lambda', 'function:drench-sdk-send-sns:{sdk_version}'),
                 ResultPath='$.sns.topic_arn',
                 Next=INJECT_SNS_SUBJECT
             ),
@@ -96,7 +96,7 @@ class WorkFlow(object):
             ),
 
             DEATH_RATTLE: TaskState(
-                Resource=get_arn('lambda', 'function:drench-sdk-send-sns'),
+                Resource=get_arn('lambda', 'function:drench-sdk-send-sns:{sdk_version}'),
                 End=True
             )
         }
@@ -117,7 +117,7 @@ class WorkFlow(object):
             raise Exception(f'The transform name {name} is reserved')
 
         if not state.Next:
-            state.Next = STATUS_TRANSLATE 
+            state.Next = STATUS_TRANSLATE
 
         if isinstance(state, Transform):
             self.sfn['States'] = {
