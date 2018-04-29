@@ -4,3 +4,4 @@ python-lambda-local
 pytest-watch
 placebo
 jsonpath-ng
+pylint

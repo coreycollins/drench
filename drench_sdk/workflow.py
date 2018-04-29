@@ -2,7 +2,7 @@
 
 import json
 
-from drench_resources import get_arn
+from drench_sdk.utils import get_arn
 from drench_sdk.states import  ChoiceState, PassState, State, TaskState
 from drench_sdk.transforms import Transform
 

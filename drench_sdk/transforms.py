@@ -1,5 +1,5 @@
 '''flows are fucntion-like packages of states'''
-from drench_resources import get_arn
+from drench_sdk.utils import get_arn
 from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceState
 
 class Transform(State):
