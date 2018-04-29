@@ -1,7 +1,7 @@
 '''update drench-api with stepp function step results'''
 import json
 import boto3
-from .sdk_util import build_path, find_subs
+from .sdk_utils import find_subs, build_path
 
 def handler(event, context): # pylint:disable=unused-argument
     '''lambda interface'''

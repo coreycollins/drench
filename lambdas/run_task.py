@@ -1,6 +1,8 @@
 ''' launch an aws task and report run id and output location '''
 import boto3
-from .sdk_util import find_subs
+
+from .sdk_utils import find_subs
+
 
 RESULT_BUCKET = 's3://com.drench.results'
 

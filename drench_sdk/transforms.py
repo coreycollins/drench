@@ -49,6 +49,12 @@ class Transform(State):
             Resource=get_arn('lambda', f'function:drench-sdk-run-task:{sdk_version}'),
             Next=step_names['wait'],
             ResultPath='$',
+            Retry=[{
+                'ErrorEquals': ['Lambda.Unknown'],
+                'IntervalSeconds': 30,
+                'MaxAttempts': 5,
+                'BackoffRate': 1.5
+            }],
             Catch=[
                 {
                     "ErrorEquals": ["States.ALL"],

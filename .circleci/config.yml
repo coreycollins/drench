@@ -46,13 +46,13 @@ jobs:
       - run:
           name: Install terraform
           command: |
-            wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -P /tmp -O terraform.zip
+            wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -O /tmp/terraform.zip
             unzip /tmp/terraform.zip -d $CIRCLE_WORKING_DIRECTORY
       - deploy:
           name: Deploy to AWS
           command: |
-            terraform init $CIRCLE_WORKING_DIRECTORY
-            terraform apply -auto-approve -var version=v1 -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION"
+            ./terraform init
+            ./terraform apply -auto-approve -var version=v1 -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION"
 
 workflows:
   version: 2
