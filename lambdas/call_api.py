@@ -9,10 +9,13 @@ from sdk_utils import find_subs, build_path
 def handler(event, context): # pylint:disable=unused-argument
     '''lambda interface'''
     # Substitute parameters
-    event['api_call']['body'] = find_subs(event['api_call']['body'], event)
+    if 'body' in event['api_call']:
+        body = find_subs(event['api_call']['body'], event)
+    else:
+        body = ''
 
     req_payload = {
-        'body': json.dumps(event['api_call']['body']),
+        'body': json.dumps(body),
         'requestContext': {
             'identity': {
                 'user': 'internal' # This must be set for the API to grant access

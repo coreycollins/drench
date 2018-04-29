@@ -46,3 +46,39 @@ def test_check_query():
 
     step_id = handler(event, {})
     assert step_id == 'step_id'
+
+def test_no_body():
+    event = {
+        'job_id': 1234,
+        'principal_id': 4321,
+        'api_version': 'v1',
+        'next': {
+            'in_path': 'some/path',
+            'out_path': 's3://com.drench.results/1234/test-query/out',
+            'content_type': 'text',
+            'report_url': None,
+            'name': 'test-query',
+            'type': 'query',
+            'params': {
+                'QueryString': 'SELECT *',
+                'ResultConfiguration': {
+                    'OutputLocation': '$.next.out_path'
+                },
+                "QueryExecutionContext": {
+                    "Database": "foo"
+                },
+            },
+        },
+        'result': {
+            'job_id': '123',
+            'out_path': 's3://com.drench.results/1234/test-query/out',
+            'report_url': 's3://foo/bar/out.html'
+        },
+        'api_call': {
+            'path':'/jobs/$.job_id/steps',
+            'method': 'PUT'
+            }
+    }
+
+    step_id = handler(event, {})
+    assert step_id == 'step_id'
