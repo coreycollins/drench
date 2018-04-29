@@ -1,5 +1,5 @@
 #pylint:disable=missing-docstring
-from lambdas.sdk_util import build_path, find_subs
+from lambdas.sdk_utils import build_path, find_subs
 
 def test_build_path():
     path = '/jobs/$.job_id/state/$.result.status'
