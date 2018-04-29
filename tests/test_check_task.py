@@ -1,7 +1,6 @@
 #pylint:disable=missing-docstring
 from lambdas.check_task import handler
 
-
 def test_check_query():
     event = {
         'job_id': 1234,

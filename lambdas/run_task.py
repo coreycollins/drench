@@ -1,24 +1,11 @@
 ''' launch an aws task and report run id and output location '''
 import boto3
-import jsonpath_ng
+from .sdk_util import find_subs
 
 RESULT_BUCKET = 's3://com.drench.results'
 
 def handler(event, context): #pylint:disable=unused-argument
     ''' default lambda interface '''
-
-    def find_subs(dic):
-        ''' Substitute params from the event dict '''
-        for key, val in dic.items():
-            if isinstance(val, dict):
-                dic[key] = find_subs(dic[key])
-            else:
-                try:
-                    expr = jsonpath_ng.parse(val)
-                    dic[key] = expr.find(event)[0].value
-                except: #pylint:disable=bare-except
-                    pass
-        return dic
 
     if 'result' in event:
         event['next']['in_path'] = event['result']['out_path']
@@ -39,7 +26,7 @@ def handler(event, context): #pylint:disable=unused-argument
     event['result']['out_path'] = event['next']['out_path']
 
     # Substitute parameters
-    event['next']['params'] = find_subs(event['next']['params'])
+    event['next']['params'] = find_subs(event['next']['params'], event)
 
     #pylint:disable=line-too-long
     #consider setting AWS_DEFAULT_REGION env var for lambda?

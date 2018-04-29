@@ -5,7 +5,7 @@ from drench_sdk.states import TaskState
 
 def example_workflow():
     """main func"""
-    workflow = WorkFlow()
+    workflow = WorkFlow(sdk_version='canary')
 
     workflow.add_state(
         name='example-query-transform',

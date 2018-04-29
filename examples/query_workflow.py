@@ -4,13 +4,13 @@ from drench_sdk.transforms import QueryTransform
 
 def example_workflow():
     """main func"""
-    workflow = WorkFlow()
+    workflow = WorkFlow(sdk_version='test')
 
     workflow.add_state(
         name='example-query-transform',
         state=QueryTransform(
-            database='drench_pools_development',
-            query_string='SELECT company, phone FROM "32c87cfee1cd4980ba0a08816f4cc38a" LIMIT 100;',
+            database='default',
+            query_string='SELECT * FROM "names2" limit 10;',
         )
     )
 
