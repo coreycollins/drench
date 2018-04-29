@@ -112,7 +112,7 @@ class Transform(State):
         if self.report_type:
             steps[step_names['build_generate_report']] = PassState(
                 Result={
-                    'path':'/reports/generate_report',
+                    'path':'/reports/generate',
                     'body':{
                         'out_path': '$.next.out_path',
                         'type': '$.report_type'
