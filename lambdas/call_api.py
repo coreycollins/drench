@@ -1,6 +1,9 @@
 '''update drench-api with stepp function step results'''
 import json
+from os import sys, path
 import boto3
+
+sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from .sdk_utils import find_subs, build_path
 
 def handler(event, context): # pylint:disable=unused-argument
