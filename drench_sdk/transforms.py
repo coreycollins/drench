@@ -96,11 +96,11 @@ class Transform(State):
                     'Or': [
                         {
                             'Variable': f'$.result.status',
-                            'StringEquals': 'failed',
+                            'StringEquals': 'fail',
                         },
                         {
                             'Variable': f'$.result.status',
-                            'StringEquals': 'finished',
+                            'StringEquals': 'pass',
                         }
                     ],
                     'Next': step_names['build_generate_report' if self.report_type else 'build_add_result'] #pylint:disable=line-too-long
