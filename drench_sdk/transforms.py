@@ -115,7 +115,7 @@ class Transform(State):
                     'path':'/reports/generate',
                     'body':{
                         'out_path': '$.next.out_path',
-                        'report_type': '$.report_type'
+                        'report_type': '$.next.report_type'
                         },
                     'method': 'POST'
                 },
