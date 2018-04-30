@@ -30,7 +30,7 @@ module "lambda-package" {
 resource "aws_lambda_function" "check_task" {
   function_name     = "drench-sdk-check-task"
   filename          = "${module.lambda-package.output_filename}"
-  #source_code_hash  = "${module.lambda-package.output_base64sha256}"
+  source_code_hash  = "${module.lambda-package.output_base64sha256}"
   role              = "${aws_iam_role.lambda_exec_role.arn}"
   handler           = "check_task.handler"
   runtime           = "python3.6"
@@ -43,7 +43,7 @@ output "check_task.arn" {value = "${aws_lambda_function.check_task.arn}"}
 resource "aws_lambda_function" "run_task" {
   function_name     = "drench-sdk-run-task"
   filename          = "${module.lambda-package.output_filename}"
-  #source_code_hash  = "${module.lambda-package.output_base64sha256}"
+  source_code_hash  = "${module.lambda-package.output_base64sha256}"
   role              = "${aws_iam_role.lambda_exec_role.arn}"
   handler           = "run_task.handler"
   runtime           = "python3.6"
@@ -56,7 +56,7 @@ output "run_task.arn" {value = "${aws_lambda_function.run_task.arn}"}
 resource "aws_lambda_function" "call_api" {
   function_name     = "drench-sdk-call-api"
   filename          = "${module.lambda-package.output_filename}"
-  #source_code_hash  = "${module.lambda-package.output_base64sha256}"
+  source_code_hash  = "${module.lambda-package.output_base64sha256}"
   role              = "${aws_iam_role.lambda_exec_role.arn}"
   handler           = "call_api.handler"
   runtime           = "python3.6"
@@ -69,7 +69,7 @@ output "call_api.arn" {value = "${aws_lambda_function.call_api.arn}"}
 resource "aws_lambda_function" "send_sns" {
   function_name     = "drench-sdk-send-sns"
   filename          = "${module.lambda-package.output_filename}"
-  #source_code_hash  = "${module.lambda-package.output_base64sha256}"
+  source_code_hash  = "${module.lambda-package.output_base64sha256}"
   role              = "${aws_iam_role.lambda_exec_role.arn}"
   handler           = "send_sns.handler"
   runtime           = "python3.6"
