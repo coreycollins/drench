@@ -1,9 +1,6 @@
 version: 2.0
 
 deploysteps: &deploysteps
-  working_directory: /tmp/project
-  docker:
-    - image: circleci/python:3.6
   steps:
     - checkout
     - run:
@@ -40,10 +37,16 @@ jobs:
           name: test
           command: ~/.local/bin/pytest
   deploy-canary:
+    working_directory: /tmp/project
+    docker:
+      - image: circleci/python:3.6
     environment:
       DEPLOY_DIR: development
     <<: *deploysteps
   deploy-prod:
+    working_directory: /tmp/project
+    docker:
+      - image: circleci/python:3.6
     environment:
       DEPLOY_DIR: production
     <<: *deploysteps
