@@ -18,8 +18,6 @@ jobs:
     working_directory: /tmp/project
     docker:
       - image: circleci/python:3.6
-    environment:
-      DEPLOY_DIR: development
     steps:
       - checkout
       - run:
@@ -37,13 +35,11 @@ jobs:
           command: |
             rm .terraform
             terraform init $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
-            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/development
   deploy-prod:
     working_directory: /tmp/project
     docker:
       - image: circleci/python:3.6
-    environment:
-      DEPLOY_DIR: production
     steps:
       - checkout
       - run:
@@ -61,7 +57,7 @@ jobs:
           command: |
             rm .terraform
             terraform init $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
-            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/production
 
 workflows:
   version: 2
