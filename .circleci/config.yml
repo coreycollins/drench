@@ -25,16 +25,13 @@ jobs:
           command: |
             wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -O /tmp/terraform.zip
             sudo unzip /tmp/terraform.zip -d /usr/local/bin
-      - run:
-          name: Update function code
-          commmand: |
-            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/common
-            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/common
       - deploy:
           name: deploy
           command: |
-            rm .terraform
-            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
+            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/common
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/common
+            rm -rf .terraform
+            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/development
             terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/development
   deploy-prod:
     working_directory: /tmp/project
@@ -47,16 +44,13 @@ jobs:
           command: |
             wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -O /tmp/terraform.zip
             sudo unzip /tmp/terraform.zip -d /usr/local/bin
-      - run:
-          name: Update function code
-          commmand: |
-            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/common
-            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/common
       - deploy:
           name: deploy
           command: |
-            rm .terraform
-            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
+            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/common
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/common
+            rm -rf .terraform
+            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/production
             terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/production
 
 workflows:
