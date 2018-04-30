@@ -1,15 +1,13 @@
 variable "aws_access_key" {}
 variable "aws_secret_key" {}
 variable "aws_region" {}
-
-variable "version" {}
+variable "aws_account_id" {}
 
 terraform {
   backend "s3" {
     bucket = "infra.compass.com"
     region = "us-east-1"
-    key    = "drench_sdk/state"
-    workspace_key_prefix = "compass"
+    key    = "drench_sdk/common/state"
   }
 }
 
@@ -26,10 +24,6 @@ module "lambda-package" {
   /* Optional, defaults to the value of $code, except the extension is
    * replaced with ".zip" */
   output_filename = "lambda_functions.zip"
-
-  /* Optional, specifies additional files to include.  These are relative
-   * to the location of the code. */
-  # extra_files = [ "data-file.txt", "extra-dir" ]
 }
 
 # Check SDK Task
@@ -42,13 +36,8 @@ resource "aws_lambda_function" "check_task" {
   runtime           = "python3.6"
   publish           = true
 }
-
-resource "aws_lambda_alias" "check_task_alias" {
-  name             = "${var.version}"
-  description      = "Alias to function by version"
-  function_name    = "${aws_lambda_function.check_task.arn}"
-  function_version = "${aws_lambda_function.check_task.version}"
-}
+output "check_task.version" {value = "${aws_lambda_function.check_task.version}"}
+output "check_task.arn" {value = "${aws_lambda_function.check_task.arn}"}
 
 # Run SDK Task
 resource "aws_lambda_function" "run_task" {
@@ -60,13 +49,8 @@ resource "aws_lambda_function" "run_task" {
   runtime           = "python3.6"
   publish           = true
 }
-
-resource "aws_lambda_alias" "run_task_alias" {
-  name             = "${var.version}"
-  description      = "Alias to function by version"
-  function_name    = "${aws_lambda_function.run_task.arn}"
-  function_version = "${aws_lambda_function.run_task.version}"
-}
+output "run_task.version" {value = "${aws_lambda_function.run_task.version}"}
+output "run_task.arn" {value = "${aws_lambda_function.run_task.arn}"}
 
 # Call API
 resource "aws_lambda_function" "call_api" {
@@ -78,13 +62,8 @@ resource "aws_lambda_function" "call_api" {
   runtime           = "python3.6"
   publish           = true
 }
-
-resource "aws_lambda_alias" "call_api_alias" {
-  name             = "${var.version}"
-  description      = "Alias to function by version"
-  function_name    = "${aws_lambda_function.call_api.arn}"
-  function_version = "${aws_lambda_function.call_api.version}"
-}
+output "call_api.version" {value = "${aws_lambda_function.call_api.version}"}
+output "call_api.arn" {value = "${aws_lambda_function.call_api.arn}"}
 
 # Send SNS
 resource "aws_lambda_function" "send_sns" {
@@ -96,13 +75,8 @@ resource "aws_lambda_function" "send_sns" {
   runtime           = "python3.6"
   publish           = true
 }
-
-resource "aws_lambda_alias" "send_sns_alias" {
-  name             = "${var.version}"
-  description      = "Alias to function by version"
-  function_name    = "${aws_lambda_function.send_sns.arn}"
-  function_version = "${aws_lambda_function.send_sns.version}"
-}
+output "send_sns.version" {value = "${aws_lambda_function.send_sns.version}"}
+output "send_sns.arn" {value = "${aws_lambda_function.send_sns.arn}"}
 
 ##
 ## Lambda Execute Role
@@ -160,8 +134,41 @@ resource "aws_iam_policy" "lambda_exec_policy" {
 EOF
 }
 
-
 resource "aws_iam_role_policy_attachment" "lambda_exec_policy" {
     role       = "${aws_iam_role.lambda_exec_role.name}"
     policy_arn = "${aws_iam_policy.lambda_exec_policy.arn}"
+}
+
+
+data "aws_iam_policy_document" "sns-topic-policy" {
+  policy_id = "__default_policy_ID"
+
+  statement {
+    actions = [
+      "SNS:Publish",
+    ]
+
+    effect = "Allow"
+
+    resources = [
+      "arn:aws:sns:${var.aws_region}:${var.aws_account_id}:*"
+    ]
+
+    condition {
+          test     = "ArnLike"
+          variable = "aws:SourceArn"
+          values = ["arn:aws:*:${var.aws_region}:${var.aws_account_id}:*"]
+    }
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+    sid = "__console_sub_0"
+  }
+}
+
+resource "aws_sns_topic" "sdk_workflow_deathrattle" {
+  name = "drench-sdk-sfn-fail-${terraform.workspace}"
+  policy = "${data.aws_iam_policy_document.sns-topic-policy.json}"
 }
