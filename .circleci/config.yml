@@ -1,26 +1,6 @@
 version: 2.0
 
 deploysteps: &deploysteps
-  steps:
-    - checkout
-    - run:
-        name: Install terraform
-        command: |
-          mkdir $CIRCLE_WORKING_DIRECTORY/bin
-          wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -O /tmp/terraform.zip
-          unzip /tmp/terraform.zip -d $CIRCLE_WORKING_DIRECTORY/bin
-    - run:
-        name: Update function code
-        commmand: |
-          cd $CIRCLE_WORKING_DIRECTORY/terraform/common
-          $CIRCLE_WORKING_DIRECTORY/bin/terraform init
-          $CIRCLE_WORKING_DIRECTORY/bin/terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
-    - deploy:
-        name: deploy
-        command: |
-          cd $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
-          $CIRCLE_WORKING_DIRECTORY/bin/terraform init
-          $CIRCLE_WORKING_DIRECTORY/bin/terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
 
 jobs:
   test:
@@ -42,14 +22,50 @@ jobs:
       - image: circleci/python:3.6
     environment:
       DEPLOY_DIR: development
-    <<: *deploysteps
+    steps:
+      - checkout
+      - run:
+          name: Install terraform
+          command: |
+            wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -O /tmp/terraform.zip
+            sudo unzip /tmp/terraform.zip -d /usr/local/bin
+      - run:
+          name: Update function code
+          commmand: |
+            cd $CIRCLE_WORKING_DIRECTORY/terraform/common
+            terraform init
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
+      - deploy:
+          name: deploy
+          command: |
+            cd $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
+            terraform init
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
   deploy-prod:
     working_directory: /tmp/project
     docker:
       - image: circleci/python:3.6
     environment:
       DEPLOY_DIR: production
-    <<: *deploysteps
+    steps:
+      - checkout
+      - run:
+          name: Install terraform
+          command: |
+            wget https://releases.hashicorp.com/terraform/0.11.7/terraform_0.11.7_linux_amd64.zip -O /tmp/terraform.zip
+            sudo unzip /tmp/terraform.zip -d /usr/local/bin
+      - run:
+          name: Update function code
+          commmand: |
+            cd $CIRCLE_WORKING_DIRECTORY/terraform/common
+            terraform init
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
+      - deploy:
+          name: deploy
+          command: |
+            cd $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
+            terraform init
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
 
 workflows:
   version: 2
