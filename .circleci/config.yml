@@ -30,15 +30,14 @@ jobs:
       - run:
           name: Update function code
           commmand: |
-            cd $CIRCLE_WORKING_DIRECTORY/terraform/common
-            terraform init
-            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
+            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/common
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/common
       - deploy:
           name: deploy
           command: |
-            cd $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
-            terraform init
-            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
+            rm .terraform
+            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
   deploy-prod:
     working_directory: /tmp/project
     docker:
@@ -55,15 +54,14 @@ jobs:
       - run:
           name: Update function code
           commmand: |
-            cd $CIRCLE_WORKING_DIRECTORY/terraform/common
-            terraform init
-            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
+            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/common
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/common
       - deploy:
           name: deploy
           command: |
-            cd $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
-            terraform init
-            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID"
+            rm .terraform
+            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
+            terraform apply -auto-approve -var "aws_access_key=$AWS_ACCESS_KEY_ID" -var "aws_secret_key=$AWS_SECRET_ACCESS_KEY" -var "aws_region=$AWS_DEFAULT_REGION" -var "aws_account_id=$AWS_ACCOUNT_ID" $CIRCLE_WORKING_DIRECTORY/terraform/$DEPLOY_DIR
 
 workflows:
   version: 2
