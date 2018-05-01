@@ -1,7 +1,6 @@
 variable "aws_access_key" {}
 variable "aws_secret_key" {}
 variable "aws_region" {}
-variable "aws_account_id" {}
 
 terraform {
   backend "s3" {
@@ -151,13 +150,13 @@ data "aws_iam_policy_document" "sns-topic-policy" {
     effect = "Allow"
 
     resources = [
-      "arn:aws:sns:${var.aws_region}:${var.aws_account_id}:*"
+      "arn:aws:sns:${var.aws_region}:909533743566:*"
     ]
 
     condition {
           test     = "ArnLike"
           variable = "aws:SourceArn"
-          values = ["arn:aws:*:${var.aws_region}:${var.aws_account_id}:*"]
+          values = ["arn:aws:*:${var.aws_region}:909533743566:*"]
     }
 
     principals {
