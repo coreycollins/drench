@@ -71,6 +71,7 @@ class WorkFlow(object):
             UPDATE_JOB: TaskState(
                 Resource=get_arn('lambda', f'function:drench-sdk-call-api:{sdk_version}'),
                 Next=END_SELECTOR,
+                ResultPath='$.api_result',
                 Retry=[{
                     'ErrorEquals': ['Lambda.Unknown'],
                     'IntervalSeconds': 30,
@@ -89,7 +90,7 @@ class WorkFlow(object):
             END_SELECTOR: ChoiceState(
                 Choices=[
                     {
-                        'Variable': f'$.result.status',
+                        'Variable': '$.result.status',
                         'StringEquals': 'finished',
                         'Next': FINISHED
                     }
