@@ -1,6 +1,8 @@
 variable "aws_access_key" {}
 variable "aws_secret_key" {}
-variable "aws_region" {}
+variable "aws_region" {
+  default = "us-east-1"
+}
 
 terraform {
   backend "s3" {
@@ -17,9 +19,6 @@ provider "aws" {
 }
 
 module "alias" {
-	source						= "../modules"
-  aws_access_key    = "${var.aws_access_key}"
-  aws_secret_key    = "${var.aws_secret_key}"
-  aws_region        = "${var.aws_region}"
-	alias							= "production"
+  source = "../modules"
+  alias  = "v1"
 }

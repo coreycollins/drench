@@ -3,14 +3,17 @@
 import json
 
 from drench_sdk.utils import get_arn
-from drench_sdk.states import  ChoiceState, PassState, State, TaskState
+from drench_sdk.states import  ChoiceState, FailState, PassState, SucceedState, State, TaskState
 from drench_sdk.transforms import Transform
 
+FAILED = '__failed'
+FINISHED = '__finished'
+END_SELECTOR = '__end_selector'
 STATUS_TRANSLATE = '__status_translate'
 STATUS_FINISHED = '__status_finished'
 STATUS_FAILED = '__status_failed'
 BUILD_UPDATE = '__build_update'
-UPDATE_END = '__update'
+UPDATE_JOB = '__update'
 INJECT_SNS_TOPIC = '__inject_sns_topic'
 INJECT_SNS_SUBJECT = '__inject_sns_subject'
 DEATH_RATTLE = '__death_rattle'
@@ -62,12 +65,12 @@ class WorkFlow(object):
                     'path': '/jobs/$.job_id/state/$.result.status'
                 },
                 ResultPath='$.api_call',
-                Next=UPDATE_END
+                Next=UPDATE_JOB
             ),
 
-            UPDATE_END: TaskState(
+            UPDATE_JOB: TaskState(
                 Resource=get_arn('lambda', f'function:drench-sdk-call-api:{sdk_version}'),
-                End=True,
+                Next=END_SELECTOR,
                 Retry=[{
                     'ErrorEquals': ['Lambda.Unknown'],
                     'IntervalSeconds': 30,
@@ -81,6 +84,17 @@ class WorkFlow(object):
                         "Next": INJECT_SNS_TOPIC
                     }
                 ]
+            ),
+
+            END_SELECTOR: ChoiceState(
+                Choices=[
+                    {
+                        'Variable': f'$.result.status',
+                        'StringEquals': 'finished',
+                        'Next': FINISHED
+                    }
+                ],
+                Default=FAILED
             ),
 
             INJECT_SNS_TOPIC: PassState(
@@ -97,24 +111,18 @@ class WorkFlow(object):
 
             DEATH_RATTLE: TaskState(
                 Resource=get_arn('lambda', 'function:drench-sdk-send-sns:{sdk_version}'),
-                End=True
-            )
+                Next=FAILED
+            ),
+
+            FINISHED: SucceedState(),
+            FAILED: FailState()
         }
 
     def add_state(self, name, state):
         """ adds transform's states to worktransform, overwrites in the case of name colissions"""
 
-        if name in [
-                STATUS_TRANSLATE,
-                STATUS_FINISHED,
-                STATUS_FAILED,
-                BUILD_UPDATE,
-                UPDATE_END,
-                INJECT_SNS_TOPIC,
-                INJECT_SNS_SUBJECT,
-                DEATH_RATTLE
-        ]:
-            raise Exception(f'The transform name {name} is reserved')
+        if name in self.sfn['States'].keys():
+            raise Exception(f'The transform name {name} is already in use')
 
         if not state.Next:
             state.Next = STATUS_TRANSLATE
@@ -134,7 +142,7 @@ class WorkFlow(object):
                     {
                         "ErrorEquals": ["States.ALL"],
                         "ResultPath": "$.result.status",
-                        "Next": UPDATE_END
+                        "Next": UPDATE_JOB
                     }
                 ]
             self.sfn['States'][name] = state
