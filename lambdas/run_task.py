@@ -6,7 +6,7 @@ sys.path.append(path.dirname(path.abspath(__file__)))
 from sdk_utils import find_subs
 
 
-RESULT_BUCKET = 's3://com.drench.results'
+RESULT_BUCKET = 's3://drench.io.results'
 
 def handler(event, context): #pylint:disable=unused-argument
     ''' default lambda interface '''
