@@ -77,7 +77,7 @@ def test_run_query():
     }
     res = handler(event, {})
 
-    correct_path = 's3://com.drench.results/1234/test-query/out'
+    correct_path = 's3://drench.io.results/1234/test-query/out'
     assert res['result']['job_id'] == '123'
     assert res['next']['params']['ResultConfiguration']['OutputLocation'] == correct_path
 
@@ -105,7 +105,7 @@ def test_run_batch():
     res = handler(event, {})
 
     correct_in_path = 'some/path'
-    correct_out_path = 's3://com.drench.results/2345/test-batch/out'
+    correct_out_path = 's3://drench.io.results/2345/test-batch/out'
     assert res['result']['job_id'] == '234'
     assert res['next']['params']['parameters']['--in_path'] == correct_in_path
     assert res['next']['params']['parameters']['--out_path'] == correct_out_path
@@ -133,7 +133,7 @@ def test_run_glue():
     res = handler(event, {})
 
     correct_in_path = 'some/path'
-    correct_out_path = 's3://com.drench.results/3456/test-glue/out'
+    correct_out_path = 's3://drench.io.results/3456/test-glue/out'
     assert res['result']['job_id'] == '345'
     assert res['next']['params']['Arguments']['--in_path'] == correct_in_path
     assert res['next']['params']['Arguments']['--out_path'] == correct_out_path
