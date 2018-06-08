@@ -15,6 +15,7 @@ venv/
 
 # Build directory
 lambda_functions.zip
+.build/
 
 # Terraform
 secret.tfvars
