@@ -99,7 +99,7 @@ class WorkFlow(object):
             ),
 
             INJECT_SNS_TOPIC: PassState(
-                Result=get_arn('lambda', 'function:drench-sdk-send-sns:{sdk_version}'),
+                Result=get_arn('lambda', f'function:drench-sdk-send-sns:{sdk_version}'),
                 ResultPath='$.sns.topic_arn',
                 Next=INJECT_SNS_SUBJECT
             ),
@@ -111,7 +111,7 @@ class WorkFlow(object):
             ),
 
             DEATH_RATTLE: TaskState(
-                Resource=get_arn('lambda', 'function:drench-sdk-send-sns:{sdk_version}'),
+                Resource=get_arn('lambda', f'function:drench-sdk-send-sns:{sdk_version}'),
                 Next=FAILED
             ),
 
