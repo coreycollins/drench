@@ -21,9 +21,9 @@ DEATH_RATTLE = '__death_rattle'
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self, sdk_version='v1', comment=None, timeout=None, version=None):
+    def __init__(self, comment=None, timeout=None, version=None):
         self.sfn = {}
-        self.sdk_version = sdk_version
+        from drench_sdk.config import SDK_VERSION
 
         if comment:
             self.sfn['Comment'] = comment
@@ -69,7 +69,7 @@ class WorkFlow(object):
             ),
 
             UPDATE_JOB: TaskState(
-                Resource=get_arn('lambda', f'function:drench-sdk-call-api:{sdk_version}'),
+                Resource=get_arn('lambda', f'function:drench-sdk-call-api:{SDK_VERSION}'),
                 Next=END_SELECTOR,
                 ResultPath='$.api_result',
                 Retry=[{
@@ -99,7 +99,7 @@ class WorkFlow(object):
             ),
 
             INJECT_SNS_TOPIC: PassState(
-                Result=get_arn('lambda', f'function:drench-sdk-send-sns:{sdk_version}'),
+                Result=get_arn('lambda', f'function:drench-sdk-send-sns:{SDK_VERSION}'),
                 ResultPath='$.sns.topic_arn',
                 Next=INJECT_SNS_SUBJECT
             ),
@@ -111,7 +111,7 @@ class WorkFlow(object):
             ),
 
             DEATH_RATTLE: TaskState(
-                Resource=get_arn('lambda', f'function:drench-sdk-send-sns:{sdk_version}'),
+                Resource=get_arn('lambda', f'function:drench-sdk-send-sns:{SDK_VERSION}'),
                 Next=FAILED
             ),
 
@@ -133,8 +133,7 @@ class WorkFlow(object):
                 **self.sfn['States'],
                 **state.states(
                     name=name,
-                    on_fail=STATUS_TRANSLATE,
-                    sdk_version=self.sdk_version
+                    on_fail=STATUS_TRANSLATE
                 )
             }
         elif isinstance(state, TaskState): #users adding TaskStates must know lambda version to call

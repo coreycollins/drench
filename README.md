@@ -1,15 +1,53 @@
-drench_sdk
-======
+# Drench SDK
 
-a set of tools for automating business logic
+A set of tools for automating business logic on the Drench API.
 
-### Features / TODO
+Documentation:
 
-- [x] Export AWS-SFN-Compatible JSON
-- [x] Batch
-- [x] Glue
-- [x] SNS
-- [x] Athena Query
-- [x] Call Drench API on completion
-- [x] CI Deploy Lambdas
-- [x] Unit Tests
+## Quickstart Guide
+
+Install the sdk like so...
+
+```
+pip install drench_sdk
+```
+
+Create a workflow script called `example.py`:
+
+```python
+from drench_sdk.workflow import WorkFlow
+from drench_sdk.transforms import BatchTransform
+
+def main():
+    '''main func'''
+    workflow = WorkFlow()
+
+    workflow.add_state(
+        name='example-batch-workflow',
+        state=BatchTransform(
+            job_definition='fetch-and-run',
+            job_queue='test',
+            parameters={
+                'script': 's3://temp.compass.com/test.py',
+                'args': 'hello'
+            }
+        )
+    )
+
+    return workflow
+
+if __name__ == '__main__':
+    main()
+```
+
+Test the workflow script...
+
+```
+drench_sdk run example.py
+```
+
+Create a Sink on the Drench API...
+
+```
+drench_sdk sink put --name "Example Sink" example.py
+```

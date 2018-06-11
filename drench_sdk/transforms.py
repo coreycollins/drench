@@ -4,37 +4,27 @@ from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceStat
 
 class Transform(State):
     '''docstring for Transform.'''
-    def __init__(self,
-                 report_type=None,
-                 content_type='application/text',
-                 **kwargs):
+    def __init__(self, **kwargs):
         super(Transform, self).__init__(Type='meta', **kwargs)
-        self.report_type = report_type
-        self.content_type = content_type
         self._default_steps = [
             'run_task',
             'wait',
             'check_task',
             'check_choice',
-            'build_generate_report',
-            'generate_report',
-            'build_add_result',
-            'add_result',
             'finish_choice'
         ]
 
-    def setup(self, name):
+    def setup(self, name): #pylint:disable=R0201
         '''build $.next'''
         setup = {
-            'name': name,
-            'content_type': self.content_type,
-            'report_type': self.report_type
+            'name': name
         }
 
         return setup
 
-    def states(self, name, on_fail, sdk_version):
+    def states(self, name, on_fail):
         '''compile and return all steps in the transform'''
+        from drench_sdk.config import SDK_VERSION
         steps = {}
 
         step_names = {step_name: f'{name}.{step_name}' for step_name in self._default_steps}
@@ -46,7 +36,7 @@ class Transform(State):
         )
 
         steps[step_names['run_task']] = TaskState(
-            Resource=get_arn('lambda', f'function:drench-sdk-run-task:{sdk_version}'),
+            Resource=get_arn('lambda', f'function:drench-sdk-run-task:{SDK_VERSION}'),
             Next=step_names['wait'],
             ResultPath='$',
             Retry=[{
@@ -72,7 +62,7 @@ class Transform(State):
 
 
         steps[step_names['check_task']] = TaskState(
-            Resource=get_arn('lambda', f'function:drench-sdk-check-task:{sdk_version}'),
+            Resource=get_arn('lambda', f'function:drench-sdk-check-task:{SDK_VERSION}'),
             Next=step_names['check_choice'],
             ResultPath=f'$.result.status',
             Retry=[{
@@ -103,86 +93,12 @@ class Transform(State):
                             'StringEquals': 'pass',
                         }
                     ],
-                    'Next': step_names['build_generate_report' if self.report_type else 'build_add_result'] #pylint:disable=line-too-long
+                    'Next': step_names['finish_choice'] #pylint:disable=line-too-long
                 }
             ],
             Default=step_names['wait'],
         )
 
-        if self.report_type:
-            steps[step_names['build_generate_report']] = PassState(
-                Result={
-                    'path':'/reports/generate',
-                    'body':{
-                        'out_path': '$.next.out_path',
-                        'report_type': '$.next.report_type'
-                        },
-                    'method': 'POST'
-                },
-                ResultPath='$.api_call',
-                Next=step_names['generate_report']
-            )
-
-            steps[step_names['generate_report']] = TaskState(
-                Resource=get_arn('lambda', f'function:drench-sdk-call-api:{sdk_version}'),
-                Next=step_names['build_add_result'],
-                ResultPath='$.result.report_url',
-                Retry=[{
-                    'ErrorEquals': ['Lambda.Unknown'],
-                    'IntervalSeconds': 30,
-                    'MaxAttempts': 5,
-                    'BackoffRate': 1.5
-                }],
-                Catch=[
-                    {
-                        "ErrorEquals": ["States.ALL"],
-                        "ResultPath": "$.result.status",
-                        "Next": on_fail
-                    }
-                ]
-            )
-
-        added_step = {
-            'name': '$.next.name',
-            'out_path': '$.next.out_path',
-            'content_type': '$.next.content_type',
-            'status': '$.result.status',
-        }
-
-        if self.report_type:
-            added_step['report_url'] = '$.result.report_url'
-
-
-        steps[step_names['build_add_result']] = PassState(
-            Result={
-                'path':'/jobs/$.job_id/steps',
-                'body':{
-                    'step':added_step,
-                },
-                'method': 'PUT'
-            },
-            ResultPath='$.api_call',
-            Next=step_names['add_result']
-        )
-
-        steps[step_names['add_result']] = TaskState(
-            Resource=get_arn('lambda', f'function:drench-sdk-call-api:{sdk_version}'),
-            Next=step_names['finish_choice'],
-            ResultPath='$.api_result',
-            Retry=[{
-                'ErrorEquals': ['Lambda.Unknown'],
-                'IntervalSeconds': 30,
-                'MaxAttempts': 5,
-                'BackoffRate': 1.5
-            }],
-            Catch=[
-                {
-                    "ErrorEquals": ["States.ALL"],
-                    "ResultPath": "$.result.status",
-                    "Next": on_fail
-                }
-            ]
-        )
         steps[step_names['finish_choice']] = ChoiceState(
             Choices=[
                 {

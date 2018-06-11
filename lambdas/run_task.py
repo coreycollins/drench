@@ -5,32 +5,23 @@ import boto3
 sys.path.append(path.dirname(path.abspath(__file__)))
 from sdk_utils import find_subs
 
-
 RESULT_BUCKET = 's3://drench.io.results'
 
 def handler(event, context): #pylint:disable=unused-argument
     ''' default lambda interface '''
 
-    if 'result' in event:
-        event['next']['in_path'] = event['result']['out_path']
-
     # raise KeyError if needed input missing
     task_type = event['next']['type']
-    if task_type != 'query':
-        _ = event['next']['in_path']
-
-    _ = event['job_id']
+    job_id = event['job_id']
     _ = event['principal_id']
 
     if 'result' not in event:
         event['result'] = {}
 
-    # Construct output path by convention
-    event['next']['out_path'] = f'{RESULT_BUCKET}/{event["job_id"]}/{event["next"]["name"]}/out'
-    event['result']['out_path'] = event['next']['out_path']
-
     # Substitute parameters
-    event['next']['params'] = find_subs(event['next']['params'], event)
+    event['next']['params'] = find_subs(dic=event['next']['params'],
+                                        base=event,
+                                        env={'{{JOB_PATH}}':f'{RESULT_BUCKET}/{job_id}'})
 
     #pylint:disable=line-too-long
     #consider setting AWS_DEFAULT_REGION env var for lambda?
