@@ -127,10 +127,7 @@ class BatchTransform(Transform):
             'jobName': name,
             'jobQueue':self.job_queue,
             'jobDefinition': self.job_definition,
-            'parameters': {
-                'in_path':'$.next.in_path',
-                'out_path':'$.next.out_path'
-            }
+            'parameters': {}
         }
 
         if self.parameters:
@@ -152,10 +149,7 @@ class GlueTransform(Transform):
         setup['params'] = {
             'JobName': self.job_name,
             'AllocatedCapacity': self.allocated_capacity,
-            'Arguments': {
-                '--in_path':'$.next.in_path',
-                '--out_path':'$.next.out_path'
-            }
+            'Arguments': {}
         }
 
         if self.arguments:
@@ -166,10 +160,11 @@ class GlueTransform(Transform):
 
 class QueryTransform(Transform):
     '''docstring for .'''
-    def __init__(self, query_string, database, **kwargs):
+    def __init__(self, query_string, database, out_path, **kwargs):
         super(QueryTransform, self).__init__(**kwargs)
         self.query_string = query_string
         self.database = database
+        self.out_path = out_path
 
     def setup(self, name):
         setup = super(QueryTransform, self).setup(name)
@@ -180,7 +175,7 @@ class QueryTransform(Transform):
                 'Database': self.database
             },
             'ResultConfiguration': {
-                'OutputLocation': '$.next.out_path'
+                'OutputLocation': self.out_path
             }
         }
 

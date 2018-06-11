@@ -31,10 +31,12 @@ def test_query_transform():
     '''test query transform constructor'''
     query_transform = QueryTransform(
         query_string='foo',
-        database='bar'
+        database='bar',
+        out_path='out/path'
     )
 
     built = query_transform.states('example-query-job', 'fail_state')
 
     assert len(built) == 6
     assert query_transform.database == 'bar'
+    assert built['example-query-job'].Result['params']['ResultConfiguration']['OutputLocation'] == 'out/path'
