@@ -12,16 +12,14 @@ def handler(event, context): #pylint:disable=unused-argument
 
     # raise KeyError if needed input missing
     task_type = event['next']['type']
-    job_id = event['job_id']
+    _ = event['job_id']
     _ = event['principal_id']
 
     if 'result' not in event:
         event['result'] = {}
 
     # Substitute parameters
-    event['next']['params'] = find_subs(dic=event['next']['params'],
-                                        base=event,
-                                        env={'{{JOB_PATH}}':f'{RESULT_BUCKET}/{job_id}'})
+    event['next']['params'] = find_subs(event['next']['params'], event)
 
     #pylint:disable=line-too-long
     #consider setting AWS_DEFAULT_REGION env var for lambda?

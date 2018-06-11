@@ -15,6 +15,7 @@ def test_build_path():
 
 def test_find_subs():
     event = {
+        'job_id':123,
         'next':{
             'name': 'foo',
             'out_path': 's3://foo/bar/out',
@@ -26,16 +27,16 @@ def test_find_subs():
         'foo': 'bar',
         'api_call': {
             'body': {
-                'name': '$.next.name',
-                'out_path': '$.next.out_path',
-                'content_type': '$.next.content_type',
-                'status': '$.result.status'
+                'name': '{{$.next.name}}',
+                'out_path': '{{$.job_id}}/{{$.next.out_path}}/path',
+                'content_type': '{{$.next.content_type}}',
+                'status': '{{$.result.status}}'
                 }
         }
     }
 
     found = find_subs(event['api_call']['body'], event)
     assert found['name'] == 'foo'
-    assert found['out_path'] == 's3://foo/bar/out'
+    assert found['out_path'] == '123/s3://foo/bar/out/path'
     assert found['content_type'] == 'text'
     assert found['status'] == 'pass'

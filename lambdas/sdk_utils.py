@@ -1,24 +1,29 @@
 '''jsonpath parsing utilities for drench sdk lambdas'''
+import re
 import jsonpath_ng
 
-def find_subs(dic, base, env=None):
+def find_subs(dic, base):
     ''' Substitute params from the event dict '''
-    env = env or {}
-
     for key, val in dic.items():
         if isinstance(val, dict):
-            dic[key] = find_subs(dic[key], base, env)
+            dic[key] = find_subs(dic[key], base)
         else:
-            new_val = val
-            if isinstance(val, str):
-                for e, v in env.items():
-                    new_val = val.replace(e, v)
-
             try:
-                expr = jsonpath_ng.parse(new_val)
-                dic[key] = expr.find(base)[0].value
+                if isinstance(val, str):
+                    new_val = val
+                    for match in re.finditer(r'\{\{(\$[a-zA-Z_.]*)\}\}', val):
+
+                        if val == match[0]:
+                            expr = jsonpath_ng.parse(match[1])
+                            new_val = expr.find(base)[0].value
+                        else:
+                            expr = jsonpath_ng.parse(match[1])
+                            repl = expr.find(base)[0].value
+                            new_val = new_val.replace(match[0], str(repl))
+
+                    dic[key] = new_val
             except: #pylint:disable=bare-except
-                dic[key] = new_val
+                pass
     return dic
 
 def build_path(path, event):

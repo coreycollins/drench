@@ -52,7 +52,7 @@ def test_run_query():
             'params': {
                 'QueryString': 'SELECT *',
                 'ResultConfiguration': {
-                    'OutputLocation': '{{JOB_PATH}}/test-query/out'
+                    'OutputLocation': 's3://drench.io.results/{{$.job_id}}/test-query/out'
                 },
                 "QueryExecutionContext": {
                     "Database": "foo"
