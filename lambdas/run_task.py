@@ -9,11 +9,7 @@ RESULT_BUCKET = 's3://drench.io.results'
 
 def handler(event, context): #pylint:disable=unused-argument
     ''' default lambda interface '''
-
-    # raise KeyError if needed input missing
     task_type = event['next']['type']
-    _ = event['job_id']
-    _ = event['principal_id']
 
     if 'result' not in event:
         event['result'] = {}

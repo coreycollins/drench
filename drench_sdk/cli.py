@@ -90,11 +90,7 @@ def run(filename, param):
     try:
         click.echo(click.style('Running state machine...', fg='blue'))
 
-        params = {
-            'job_id': 123,
-            'principal_id': 123
-        }
-        params.update({k:v for (k, v) in param})
+        params = {k:v for (k, v) in param}
         resp = client.start_execution(stateMachineArn=machine_arn, input=json.dumps(params))
         _sfn_waiter(resp['executionArn'])
         click.echo(click.style('State machine ran successfully.', fg='green'))
