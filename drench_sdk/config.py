@@ -1,2 +1,4 @@
 """ Store global config variables """
-SDK_VERSION = 'v1'
+import os
+
+SDK_VERSION = os.getenv('DRENCH_SDK_VERSION', 'v1')
