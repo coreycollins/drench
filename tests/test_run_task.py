@@ -3,45 +3,6 @@ import pytest
 
 from lambdas.run_task import handler
 
-
-def test_no_in_path_with_query():
-    event = {
-        'next': {
-            'type':'query'
-            }
-    }
-
-    with pytest.raises(KeyError) as error:
-        handler(event, {})
-
-    assert str(error.value) == "'job_id'"
-
-
-def test_no_job_id():
-    event = {
-        'next': {
-            'type':'batch'
-        }
-    }
-
-    with pytest.raises(KeyError) as error:
-        handler(event, {})
-
-    assert str(error.value) == "'job_id'"
-
-def test_no_account_id():
-    event = {
-        'job_id': 1234,
-        'next': {
-            'type':'batch'
-        }
-    }
-
-    with pytest.raises(KeyError) as error:
-        handler(event, {})
-
-    assert str(error.value) == "'principal_id'"
-
 def test_run_query():
     event = {
         'job_id': 1234,
