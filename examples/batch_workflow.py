@@ -2,23 +2,23 @@
 from drench_sdk.workflow import WorkFlow
 from drench_sdk.transforms import BatchTransform
 
-def example_workflow():
+def main():
     '''main func'''
     workflow = WorkFlow(sdk_version='canary')
 
     workflow.add_state(
         name='example-batch-workflow',
         state=BatchTransform(
-            job_definition='sap-job-execution',
-            job_queue='production_low',
+            job_definition='fetch-and-run',
+            job_queue='test',
             parameters={
-                'job': 's3://temp.compass.com/test_drench_sap_batch/test_sap_job.atl',
-                'job_name': 'test_batch_job'
-                }
-            )
+                'script': 's3://temp.compass.com/test.py',
+                'args': 'hello'
+            }
         )
+    )
 
-    print(workflow.to_json())
+    return workflow
 
 if __name__ == '__main__':
-    example_workflow()
+    main()

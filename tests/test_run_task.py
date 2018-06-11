@@ -4,18 +4,6 @@ import pytest
 from lambdas.run_task import handler
 
 
-def test_no_in_path():
-    event = {
-        'next': {
-            'type':'batch'
-            }
-    }
-
-    with pytest.raises(KeyError) as error:
-        handler(event, {})
-
-    assert str(error.value) == "'in_path'"
-
 def test_no_in_path_with_query():
     event = {
         'next': {
@@ -32,7 +20,6 @@ def test_no_in_path_with_query():
 def test_no_job_id():
     event = {
         'next': {
-            'in_path': 'some/path',
             'type':'batch'
         }
     }
@@ -46,7 +33,6 @@ def test_no_account_id():
     event = {
         'job_id': 1234,
         'next': {
-            'in_path': 'some/path',
             'type':'batch'
         }
     }
@@ -61,13 +47,12 @@ def test_run_query():
         'job_id': 1234,
         'principal_id': 4321,
         'next': {
-            'in_path': 'some/path',
             'name': 'test-query',
             'type': 'query',
             'params': {
                 'QueryString': 'SELECT *',
                 'ResultConfiguration': {
-                    'OutputLocation': '$.next.out_path'
+                    'OutputLocation': '{{JOB_PATH}}/test-query/out'
                 },
                 "QueryExecutionContext": {
                     "Database": "foo"
@@ -77,9 +62,8 @@ def test_run_query():
     }
     res = handler(event, {})
 
-    correct_path = 's3://drench.io.results/1234/test-query/out'
     assert res['result']['job_id'] == '123'
-    assert res['next']['params']['ResultConfiguration']['OutputLocation'] == correct_path
+    assert res['next']['params']['ResultConfiguration']['OutputLocation'] == 's3://drench.io.results/1234/test-query/out'
 
 def test_run_batch():
     event = {
@@ -92,10 +76,7 @@ def test_run_batch():
                 'jobName': 'foo',
                 'jobQueue': 'bar',
                 'jobDefinition': 'baz',
-                'parameters': {
-                    '--in_path': '$.next.in_path',
-                    '--out_path': '$.next.out_path'
-                }
+                'parameters': {}
             }
         },
         'result': {
@@ -103,12 +84,7 @@ def test_run_batch():
         }
     }
     res = handler(event, {})
-
-    correct_in_path = 'some/path'
-    correct_out_path = 's3://drench.io.results/2345/test-batch/out'
     assert res['result']['job_id'] == '234'
-    assert res['next']['params']['parameters']['--in_path'] == correct_in_path
-    assert res['next']['params']['parameters']['--out_path'] == correct_out_path
 
 def test_run_glue():
     event = {
@@ -120,10 +96,7 @@ def test_run_glue():
             'params': {
                 'JobName': 'foo',
                 'AllocatedCapacity': 2,
-                'Arguments': {
-                    '--in_path': '$.next.in_path',
-                    '--out_path': '$.next.out_path'
-                }
+                'Arguments': {}
             }
         },
         'result': {
@@ -131,9 +104,4 @@ def test_run_glue():
         }
     }
     res = handler(event, {})
-
-    correct_in_path = 'some/path'
-    correct_out_path = 's3://drench.io.results/3456/test-glue/out'
     assert res['result']['job_id'] == '345'
-    assert res['next']['params']['Arguments']['--in_path'] == correct_in_path
-    assert res['next']['params']['Arguments']['--out_path'] == correct_out_path

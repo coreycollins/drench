@@ -1,15 +1,20 @@
 #pylint:disable=missing-docstring
 #pylint:disable=line-too-long
-import json
 import pytest
-from drench_sdk.workflow import WorkFlow
+from drench_sdk.workflow import WorkFlow, UPDATE_JOB
 from drench_sdk.transforms import GlueTransform
+import drench_sdk.config
 
 def test_workflow():
     """main func"""
     workflow = WorkFlow(comment='test', timeout=60, version=1.1)
-
     assert len(workflow.sfn['States']) == 11
+
+def test_diff_version_workflow():
+    """main func"""
+    drench_sdk.config.SDK_VERSION = 'canary'
+    workflow = WorkFlow(comment='test', timeout=60, version=1.1)
+    assert workflow.sfn['States'][UPDATE_JOB].Resource.endswith(drench_sdk.config.SDK_VERSION)
 
 def test_add_transform():
     workflow = WorkFlow()
@@ -21,7 +26,7 @@ def test_add_transform():
         )
     )
 
-    assert len(workflow.sfn['States']) == 19
+    assert len(workflow.sfn['States']) == 17
 
 def test_to_json():
     workflow = WorkFlow()
@@ -33,15 +38,14 @@ def test_to_json():
         )
     )
 
-    w_f = json.loads(workflow.to_json())
+    w_f = workflow.as_dict()
 
     assert w_f['States']['example-glue-job']['Result']['type'] == 'glue'
-    assert w_f['States']['example-glue-job.run_task']['Resource'].endswith(':v1')
+    assert w_f['States']['example-glue-job.run_task']['Resource'].endswith(drench_sdk.config.SDK_VERSION)
     assert w_f['States']['example-glue-job.run_task']['Catch'][0]['Next'] == '__status_translate'
     assert w_f['States']['example-glue-job.wait']['Next'] == 'example-glue-job.check_task'
     assert w_f['States']['example-glue-job.check_task']['Catch'][0]['Next'] == '__status_translate'
-    assert w_f['States']['example-glue-job.check_choice']['Choices'][0]['Next'] == 'example-glue-job.build_add_result'
-    assert w_f['States']['example-glue-job.build_add_result']['Result']['body']['step']['content_type'] == '$.next.content_type'
+    assert w_f['States']['example-glue-job.check_choice']['Choices'][0]['Next'] == 'example-glue-job.finish_choice'
     assert w_f['States']['example-glue-job.finish_choice']['Choices'][0]['Next'] == '__status_translate'
     assert w_f['States']['example-glue-job.finish_choice']['Default'] == '__status_translate'
     assert w_f['States']['__status_translate']['Default'] == '__status_failed'
