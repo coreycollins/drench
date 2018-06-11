@@ -50,8 +50,9 @@ def output(filename):
     print(workflow.to_json())
 
 @cli.command('run', short_help='Test a workflow.')
+@click.option('--param', nargs=2, type=click.Tuple([str, str]), multiple=True)
 @click.argument('filename')
-def run(filename):
+def run(filename, param):
     """ Run a workflow by executing a test statemachine. """
     full_path = os.path.join(os.curdir, filename)
     workflow = _load_workflow(full_path)
@@ -93,6 +94,7 @@ def run(filename):
             'job_id': 123,
             'principal_id': 123
         }
+        params.update({k:v for (k, v) in param})
         resp = client.start_execution(stateMachineArn=machine_arn, input=json.dumps(params))
         _sfn_waiter(resp['executionArn'])
         click.echo(click.style('State machine ran successfully.', fg='green'))
