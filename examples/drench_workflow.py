@@ -3,9 +3,9 @@ from drench_sdk.workflow import WorkFlow
 from drench_sdk.transforms import BatchTransform, GlueTransform, QueryTransform
 from drench_sdk.states import TaskState
 
-def example_workflow():
+def main():
     """main func"""
-    workflow = WorkFlow(sdk_version='canary')
+    workflow = WorkFlow()
 
     workflow.add_state(
         name='example-query-transform',
@@ -49,7 +49,7 @@ def example_workflow():
         )
     )
 
-    print(workflow.to_json())
+    return workflow
 
 if __name__ == '__main__':
-    example_workflow()
+    main()
