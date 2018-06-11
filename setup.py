@@ -9,7 +9,8 @@ setup(name='drench_sdk',
       install_requires=[
           'click>=5.1',
           'jsonpath_ng',
-          'requests'
+          'requests',
+          'boto3'
       ],
       entry_points={
           'console_scripts': [

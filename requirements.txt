@@ -1,3 +1,4 @@
 jsonpath_ng
 click
 requests
+boto3
