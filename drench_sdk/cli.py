@@ -45,9 +45,6 @@ def cli():
 @click.argument('args', nargs=-1)
 def output(filename, terraform, args):
     """ Generate a workflow and print it's output. """
-    args = list(args)
-    args.pop(0) # Remove filename
-
     full_path = os.path.join(os.curdir, filename)
     workflow = _load_workflow(full_path, args)
 
@@ -59,13 +56,10 @@ def output(filename, terraform, args):
 
 @cli.command('run', short_help='Test a workflow.')
 @click.option('--param', '-p', nargs=2, type=click.Tuple([str, str]), multiple=True)
-@click.argument('filename')
+@click.argument('filename', required=True)
 @click.argument('args', nargs=-1)
 def run(filename, param, args):
     """ Run a workflow by executing a test statemachine. """
-    args = list(args)
-    args.pop(0) # Remove filename
-
     full_path = os.path.join(os.curdir, filename)
     workflow = _load_workflow(full_path, args)
 
