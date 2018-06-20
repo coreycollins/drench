@@ -11,7 +11,7 @@ import boto3
 import click
 import requests
 
-def _load_workflow(filepath):
+def _load_workflow(filepath, args):
     """ Load the file and call the main method """
     module_path = os.path.dirname(filepath)
     module_name = os.path.splitext(os.path.basename(filepath))[0]
@@ -19,7 +19,7 @@ def _load_workflow(filepath):
 
     # Load the wf
     module = importlib.import_module(module_name)
-    return module.main()
+    return module.main(args)
 
 def _sfn_waiter(execution_arn):
     """ Wait for sfn machine to exit """
@@ -40,22 +40,34 @@ def cli():
     pass
 
 @cli.command('output', short_help='Generate output for a drench sdk workflow.')
-@click.argument('filename')
-def output(filename):
+@click.option('--terraform', '-t', default=False, is_flag=True, help='Generate this output for terraform')
+@click.argument('filename', required=True)
+@click.argument('args', nargs=-1)
+def output(filename, terraform, args):
     """ Generate a workflow and print it's output. """
+    args = list(args)
+    args.pop(0) # Remove filename
+
     full_path = os.path.join(os.curdir, filename)
-    workflow = _load_workflow(full_path)
+    workflow = _load_workflow(full_path, args)
 
     # Print the workflow to JSON
-    print(workflow.to_json())
+    if terraform:
+        print(json.dumps({'machine':workflow.to_json()}))
+    else:
+        print(workflow.to_json())
 
 @cli.command('run', short_help='Test a workflow.')
-@click.option('--param', nargs=2, type=click.Tuple([str, str]), multiple=True)
+@click.option('--param', '-p', nargs=2, type=click.Tuple([str, str]), multiple=True)
 @click.argument('filename')
-def run(filename, param):
+@click.argument('args', nargs=-1)
+def run(filename, param, args):
     """ Run a workflow by executing a test statemachine. """
+    args = list(args)
+    args.pop(0) # Remove filename
+
     full_path = os.path.join(os.curdir, filename)
-    workflow = _load_workflow(full_path)
+    workflow = _load_workflow(full_path, args)
 
     from .workflow import (
         STATUS_FINISHED,
@@ -99,58 +111,58 @@ def run(filename, param):
         client.delete_state_machine(stateMachineArn=machine_arn)
 
 
-class APIRoot(object): #pylint:disable=R0903
-    """ API root command """
-    def __init__(self, endpoint=None, account=None):
-        self.endpoint = endpoint
-        self.account = account
+# class APIRoot(object): #pylint:disable=R0903
+#     """ API root command """
+#     def __init__(self, endpoint=None, account=None):
+#         self.endpoint = endpoint
+#         self.account = account
 
-@cli.group('sink')
-@click.option('--endpoint', default='https://api.drench.io/v1')
-@click.option('--account', default='global', help='Your drench api account id.')
-@click.pass_context
-def sink(ctx, endpoint, account):
-    """ Sink command group """
-    ctx.obj = APIRoot(endpoint, account)
+# @cli.group('sink')
+# @click.option('--endpoint', default='https://api.drench.io/v1')
+# @click.option('--account', default='global', help='Your drench api account id.')
+# @click.pass_context
+# def sink(ctx, endpoint, account):
+#     """ Sink command group """
+#     ctx.obj = APIRoot(endpoint, account)
 
-@sink.command('put', short_help='Create or update a sink with a workflow.')
-@click.option('--approval', default=False, help='Approval flag for sink.')
-@click.option('--name', '-n', help='Friendly name for the sink.')
-@click.argument('filename')
-@click.pass_obj
-def put_sink(api, name, filename, approval):
-    '''Create or update a sink with a workflow.'''
-    name = name or uuid.uuid4().hex
-
-    full_path = os.path.join(os.curdir, filename)
-    workflow = _load_workflow(full_path)
-
-    headers = {'x-drench-account': api.account}
-
-    # Try to find sink
-    try:
-        sinks = requests.get(f'{api.endpoint}/sinks', headers=headers).json()
-        sink_id = next(sink['source_id'] for sink in sinks if sink['name'] == name)
-
-        # Update sink
-        data = json.dumps({
-            'approval': approval,
-            'statemachine': workflow.as_dict()
-        })
-        resp = requests.put(f'{api.endpoint}/sinks/{sink_id}', headers=headers, data=data)
-        sink = resp.json()
-    except StopIteration:
-        # Create new sink
-        data = json.dumps({
-            'name': name,
-            'approval': approval,
-            'statemachine': workflow.as_dict()
-        })
-        resp = requests.post(f'{api.endpoint}/sinks', headers=headers, data=data)
-        sink = resp.json()
-
-    # Pretty Print Sink
-    click.echo(click.style(json.dumps(sink, indent=4), fg='blue'))
+# @sink.command('put', short_help='Create or update a sink with a workflow.')
+# @click.option('--approval', default=False, help='Approval flag for sink.')
+# @click.option('--name', '-n', help='Friendly name for the sink.')
+# @click.argument('filename')
+# @click.pass_obj
+# def put_sink(api, name, filename, approval):
+#     '''Create or update a sink with a workflow.'''
+#     name = name or uuid.uuid4().hex
+#
+#     full_path = os.path.join(os.curdir, filename)
+#     workflow = _load_workflow(full_path)
+#
+#     headers = {'x-drench-account': api.account}
+#
+#     # Try to find sink
+#     try:
+#         sinks = requests.get(f'{api.endpoint}/sinks', headers=headers).json()
+#         sink_id = next(sink['source_id'] for sink in sinks if sink['name'] == name)
+#
+#         # Update sink
+#         data = json.dumps({
+#             'approval': approval,
+#             'statemachine': workflow.as_dict()
+#         })
+#         resp = requests.put(f'{api.endpoint}/sinks/{sink_id}', headers=headers, data=data)
+#         sink = resp.json()
+#     except StopIteration:
+#         # Create new sink
+#         data = json.dumps({
+#             'name': name,
+#             'approval': approval,
+#             'statemachine': workflow.as_dict()
+#         })
+#         resp = requests.post(f'{api.endpoint}/sinks', headers=headers, data=data)
+#         sink = resp.json()
+#
+#     # Pretty Print Sink
+#     click.echo(click.style(json.dumps(sink, indent=4), fg='blue'))
 
 def main():
     """ main method """

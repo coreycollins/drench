@@ -164,4 +164,4 @@ class WorkFlow(object):
 
     def to_json(self):
         """dump Worktransform to AWS Step Function JSON"""
-        return json.dumps(self.as_dict(), indent=4, sort_keys=True)
+        return json.dumps(self.as_dict(), sort_keys=True)

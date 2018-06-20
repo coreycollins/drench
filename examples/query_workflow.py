@@ -2,7 +2,7 @@
 from drench_sdk.workflow import WorkFlow
 from drench_sdk.transforms import QueryTransform
 
-def main():
+def main(args=None):
     """main func"""
     workflow = WorkFlow()
 
@@ -10,6 +10,7 @@ def main():
         name='example-query-transform',
         state=QueryTransform(
             database='default',
+            out_path='some-bucket',
             query_string='SELECT * FROM "names2" limit 10;',
         )
     )

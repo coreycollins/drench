@@ -2,7 +2,7 @@
 from drench_sdk.workflow import WorkFlow
 from drench_sdk.transforms import BatchTransform
 
-def main():
+def main(args=None):
     '''main func'''
     workflow = WorkFlow()
 

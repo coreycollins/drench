@@ -3,7 +3,7 @@ from drench_sdk.workflow import WorkFlow
 from drench_sdk.transforms import BatchTransform, GlueTransform, QueryTransform
 from drench_sdk.states import TaskState
 
-def main():
+def main(args=None):
     """main func"""
     workflow = WorkFlow()
 
@@ -11,6 +11,7 @@ def main():
         name='example-query-transform',
         state=QueryTransform(
             database='some_db',
+            out_path='come-bucket',
             query_string='SELECT id, name FROM some_table LIMIT 100;',
             Next='example-batch-transform',
             Start=True
