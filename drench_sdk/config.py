@@ -1,4 +1,4 @@
 """ Store global config variables """
-import os
 
-SDK_VERSION = os.getenv('DRENCH_SDK_VERSION', 'v1')
+# FIXME
+SDK_VERSION = 'canary'

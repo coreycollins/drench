@@ -27,12 +27,7 @@ jobs:
             sudo unzip /tmp/terraform.zip -d /usr/local/bin
       - deploy:
           name: deploy
-          command: |
-            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/common
-            terraform apply -auto-approve $CIRCLE_WORKING_DIRECTORY/terraform/common
-            rm -rf .terraform
-            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/development
-            terraform apply -auto-approve $CIRCLE_WORKING_DIRECTORY/terraform/development
+          command: ./deploy.sh canary
   deploy-prod:
     working_directory: /tmp/project
     docker:
@@ -46,12 +41,7 @@ jobs:
             sudo unzip /tmp/terraform.zip -d /usr/local/bin
       - deploy:
           name: deploy
-          command: |
-            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/common
-            terraform apply -auto-approve $CIRCLE_WORKING_DIRECTORY/terraform/common
-            rm -rf .terraform
-            terraform init $CIRCLE_WORKING_DIRECTORY/terraform/production
-            terraform apply -auto-approve $CIRCLE_WORKING_DIRECTORY/terraform/production
+          command: ./deploy.sh production
 
 workflows:
   version: 2

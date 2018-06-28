@@ -8,7 +8,7 @@ terraform {
   backend "s3" {
     bucket = "infra.compass.com"
     region = "us-east-1"
-    key    = "drench_sdk/development/state"
+    key    = "drench_sdk/workspace"
   }
 }
 
@@ -18,7 +18,11 @@ provider "aws" {
   region        = "${var.aws_region}"
 }
 
-module "alias" {
-  source = "../modules"
-  alias  = "canary"
+data "terraform_remote_state" "common" {
+  backend = "s3"
+  config {
+    bucket = "infra.compass.com"
+    key    = "drench_sdk/common/state" // FIXME
+    region = "us-east-1"
+  }
 }
