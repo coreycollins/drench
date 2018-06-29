@@ -17,14 +17,13 @@ def handler(event, context): # pylint:disable=unused-argument
     req_payload = {
         'body': json.dumps(body),
         'requestContext': {
+            'accountId': event["principal_id"],
             'identity': {
                 'user': 'internal' # This must be set for the API to grant access
             }
         },
         'queryStringParameters': {},
-        'headers': {
-            'x-drench-account': event["principal_id"]
-        },
+        'headers': {},
         'httpMethod': event['api_call']['method'],
         'path': build_path(event['api_call']['path'], event)
     }
