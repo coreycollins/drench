@@ -18,5 +18,8 @@ def handler(event, context): #pylint:disable=unused-argument
     client.publish(
         TopicArn=event['topic_arn'],
         MessageStructure='json',
-        Message=json.dumps(message)
+        Message=json.dumps(message),
+        MessageAttributes={
+            'source': {'DataType':'String', 'StringValue': 'drench_sdk'}
+        }
     )
