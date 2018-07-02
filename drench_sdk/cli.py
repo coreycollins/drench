@@ -9,7 +9,6 @@ import json
 import uuid
 import boto3
 import click
-import requests
 
 def _load_workflow(filepath, args):
     """ Load the file and call the main method """
