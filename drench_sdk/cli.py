@@ -52,44 +52,25 @@ def output(filename, terraform, args):
     if terraform:
         print(json.dumps({'machine':workflow.to_json()}))
     else:
-        print(workflow.to_json())
+        click.echo(click.style(json.dumps(workflow.as_dict(), indent=4), fg='blue'))
 
 @cli.command('run', short_help='Test a workflow.')
 @click.option('--param', '-p', nargs=2, type=click.Tuple([str, str]), multiple=True)
+@click.option('--topic_arn', required=True)
+@click.option('--role_arn', required=True)
 @click.argument('filename', required=True)
 @click.argument('args', nargs=-1)
-def run(filename, param, args):
+def run(filename, topic_arn, role_arn, param, args):
     """ Run a workflow by executing a test statemachine. """
     full_path = os.path.join(os.curdir, filename)
     workflow = _load_workflow(full_path, args)
-
-    from .workflow import (
-        STATUS_FINISHED,
-        STATUS_FAILED,
-        END_SELECTOR,
-        BUILD_UPDATE,
-        UPDATE_JOB,
-        INJECT_SNS_TOPIC,
-        INJECT_SNS_SUBJECT,
-        DEATH_RATTLE)
-
-    # Bypass the api update step
-    workflow.sfn['States'][STATUS_FINISHED].Next = END_SELECTOR
-    workflow.sfn['States'][STATUS_FAILED].Next = END_SELECTOR
-
-    # Delete unreachable states
-    del workflow.sfn['States'][BUILD_UPDATE]
-    del workflow.sfn['States'][UPDATE_JOB]
-    del workflow.sfn['States'][INJECT_SNS_TOPIC]
-    del workflow.sfn['States'][INJECT_SNS_SUBJECT]
-    del workflow.sfn['States'][DEATH_RATTLE]
 
     client = boto3.client('stepfunctions')
     click.echo(click.style('Creating state machine...', fg='blue'))
     resp = client.create_state_machine(
         name=uuid.uuid4().hex,
         definition=workflow.to_json(),
-        roleArn=f'arn:aws:iam::909533743566:role/drench-api-snf-exec-role'
+        roleArn=role_arn
     )
     machine_arn = resp["stateMachineArn"]
 
@@ -97,6 +78,9 @@ def run(filename, param, args):
         click.echo(click.style('Running state machine...', fg='blue'))
 
         params = {k:v for (k, v) in param}
+
+        params['topic_arn'] = topic_arn
+
         resp = client.start_execution(stateMachineArn=machine_arn, input=json.dumps(params))
         _sfn_waiter(resp['executionArn'])
         click.echo(click.style('State machine ran successfully.', fg='green'))

@@ -12,7 +12,7 @@ def test_batch_transform():
     built = batch_transform.states('example-batch-job', 'fail_state')
 
     assert len(built) == 6
-    assert built['example-batch-job.run_task'].Resource.endswith(SDK_VERSION)
+    assert SDK_VERSION in built['example-batch-job.run_task'].Resource
     assert batch_transform.job_definition == 'bar'
 
 def test_glue_transform():

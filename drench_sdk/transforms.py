@@ -36,7 +36,7 @@ class Transform(State):
         )
 
         steps[step_names['run_task']] = TaskState(
-            Resource=get_arn('lambda', f'function:drench-sdk-run-task:{SDK_VERSION}'),
+            Resource=get_arn('lambda', f'function:{SDK_VERSION}-drench-sdk-run-task'),
             Next=step_names['wait'],
             ResultPath='$',
             Retry=[{
@@ -62,7 +62,7 @@ class Transform(State):
 
 
         steps[step_names['check_task']] = TaskState(
-            Resource=get_arn('lambda', f'function:drench-sdk-check-task:{SDK_VERSION}'),
+            Resource=get_arn('lambda', f'function:{SDK_VERSION}-drench-sdk-check-task'),
             Next=step_names['check_choice'],
             ResultPath=f'$.result.status',
             Retry=[{

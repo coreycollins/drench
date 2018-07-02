@@ -1,4 +1,3 @@
 """ Store global config variables """
 
-# FIXME
-SDK_VERSION = 'canary'
+SDK_VERSION = 'v1'

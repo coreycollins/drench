@@ -1,27 +1,41 @@
-resource "aws_lambda_alias" "check_task_alias" {
-  name             = "${terraform.workspace}"
-  description      = "Alias to function by version"
-  function_name    = "${data.terraform_remote_state.common.check_task.arn}"
-  function_version = "${data.terraform_remote_state.common.check_task.version}"
+module "lambda-package" {
+  source = "github.com/compassmarketing/terraform-package-lambda"
+  path = "lambdas"
+  deps_filename = "lib/dependencies.zip"
+
+  /* Optional, defaults to the value of $code, except the extension is
+   * replaced with ".zip" */
+  output_filename = "lambda_functions.zip"
 }
 
-resource "aws_lambda_alias" "run_task_alias" {
-  name             = "${terraform.workspace}"
-  description      = "Alias to function by version"
-  function_name    = "${data.terraform_remote_state.common.run_task.arn}"
-  function_version = "${data.terraform_remote_state.common.run_task.version}"
+# Check SDK Task
+resource "aws_lambda_function" "check_task" {
+  function_name     = "${terraform.workspace}-drench-sdk-check-task"
+  filename          = "${module.lambda-package.output_filename}"
+  source_code_hash  = "${module.lambda-package.output_base64sha256}"
+  role              = "${data.terraform_remote_state.common.sdk.lambda_role}"
+  handler           = "check_task.handler"
+  runtime           = "python3.6"
+  publish           = true
+}
+# Run SDK Task
+resource "aws_lambda_function" "run_task" {
+  function_name     = "${terraform.workspace}-drench-sdk-run-task"
+  filename          = "${module.lambda-package.output_filename}"
+  source_code_hash  = "${module.lambda-package.output_base64sha256}"
+  role              = "${data.terraform_remote_state.common.sdk.lambda_role}"
+  handler           = "run_task.handler"
+  runtime           = "python3.6"
+  publish           = true
 }
 
-resource "aws_lambda_alias" "call_api_alias" {
-  name             = "${terraform.workspace}"
-  description      = "Alias to function by version"
-  function_name    = "${data.terraform_remote_state.common.call_api.arn}"
-  function_version = "${data.terraform_remote_state.common.call_api.version}"
-}
-
-resource "aws_lambda_alias" "send_sns_alias" {
-  name             = "${terraform.workspace}"
-  description      = "Alias to function by version"
-  function_name    = "${data.terraform_remote_state.common.send_sns.arn}"
-  function_version = "${data.terraform_remote_state.common.send_sns.version}"
+# Send SNS
+resource "aws_lambda_function" "send_sns" {
+  function_name     = "${terraform.workspace}-drench-sdk-send-sns"
+  filename          = "${module.lambda-package.output_filename}"
+  source_code_hash  = "${module.lambda-package.output_base64sha256}"
+  role              = "${data.terraform_remote_state.common.sdk.lambda_role}"
+  handler           = "send_sns.handler"
+  runtime           = "python3.6"
+  publish           = true
 }
