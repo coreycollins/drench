@@ -1,25 +1,33 @@
-'''report when sdk -> api communication fails'''
+'''send status message through sns with channel config'''
 import json
 import boto3
+
+SUBJECTS = {
+    'running':'The step function has started running',
+    'finished':'The step function has finished',
+    'failed':'The step function has failed'
+}
 
 def handler(event, context): #pylint:disable=unused-argument
     '''default lambda interface'''
     client = boto3.client('sns', region_name='us-east-1')
 
-    if 'topic_arn' not in event:
-        raise Exception('Topic Arn not found')
+    if 'sns_hook' not in event:
+        return
 
-    raw_data = json.dumps(event)
-    message = {
-        'default': raw_data,
-        'drench': raw_data
+    config = event['sns_hook']
+    status = event['result']['status']
+
+    payload = {
+        'default': status,
+        'lambda': json.dumps(event),
+        'email': status.upper()
     }
 
     client.publish(
-        TopicArn=event['topic_arn'],
+        TopicArn=config['topic_arn'],
         MessageStructure='json',
-        Message=json.dumps(message),
-        MessageAttributes={
-            'source': {'DataType':'String', 'StringValue': 'drench_sdk'}
-        }
+        Subject=SUBJECTS[status],
+        Message=json.dumps(payload),
+        MessageAttributes=config['attributes']
     )
