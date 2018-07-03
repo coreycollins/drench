@@ -15,7 +15,7 @@ def handler(event, context): #pylint:disable=unused-argument
         TopicArn=topic_arn,
         Message=event['result']['status'],
         MessageAttributes={
-            'event-type': {'DataType':'String', 'StringValue':'sfn'},
+            'message_type': {'DataType':'String', 'StringValue':'sfn'},
             'account_id': {'DataType':'String', 'StringValue': str(account_id)},
             'job_id': {'DataType':'String', 'StringValue': str(job_id)}
         }
