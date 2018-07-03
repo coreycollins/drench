@@ -1,6 +1,6 @@
 {
   "topic_arn": "arn:aws:sns:us-east-1:909533743566:test-email",
-  "job_id": 123,
+  "principal_id": "123",
   "result": {
     "status": "finished"
   },

@@ -12,10 +12,17 @@ def handler(event, context): #pylint:disable=unused-argument
     '''default lambda interface'''
     client = boto3.client('sns', region_name='us-east-1')
 
-    if 'sns_hook' not in event:
-        return
+    topic_arn = event['topic_arn']
 
-    config = event['sns_hook']
+    message_attrs = {'source':{'DataType':'String', 'StringValue':'drench_sdk'}}
+
+    # Principal ID can be sent through to allow for filtering on backend
+    if 'principal_id' in event:
+        message_attrs['principal_id'] = {
+            'DataType':'String',
+            'StringValue':str(event['principal_id'])
+        }
+
     status = event['result']['status']
 
     payload = {
@@ -25,9 +32,9 @@ def handler(event, context): #pylint:disable=unused-argument
     }
 
     client.publish(
-        TopicArn=config['topic_arn'],
+        TopicArn=topic_arn,
         MessageStructure='json',
         Subject=SUBJECTS[status],
         Message=json.dumps(payload),
-        MessageAttributes=config['attributes']
+        MessageAttributes=message_attrs
     )
