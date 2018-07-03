@@ -1,5 +1,4 @@
 '''send status message through sns with channel config'''
-import json
 import boto3
 
 def handler(event, context): #pylint:disable=unused-argument
@@ -8,18 +7,16 @@ def handler(event, context): #pylint:disable=unused-argument
 
     topic_arn = event['topic_arn']
 
-    payload = {
-        'type': 'sfn',
-        'state': event
-    }
-
-    message = {
-        'default': event['result']['status'],
-        'lambda': json.dumps(payload)
-    }
+    #FIXME This is a direct dependcy from the API and needs to be fixed
+    job_id = event['job_id']
+    account_id = event['account_id']
 
     client.publish(
         TopicArn=topic_arn,
-        MessageStructure='json',
-        Message=json.dumps(message)
+        Message=event['result']['status'],
+        MessageAttributes={
+            'event-type': {'DataType':'String', 'StringValue':'sfn'},
+            'account_id': {'DataType':'String', 'StringValue': str(account_id)},
+            'job_id': {'DataType':'String', 'StringValue': str(job_id)}
+        }
     )
