@@ -6,7 +6,12 @@ def test_batch_transform():
     '''test batch transform constructor'''
     batch_transform = BatchTransform(
         job_queue='foo',
-        job_definition='bar'
+        job_definition='bar',
+        parameters={'input': 'some_file'},
+        container_overrides={
+            'vcpus': 123,
+            'memory': 123
+        }
     )
 
     built = batch_transform.states('example-batch-job', 'fail_state')
@@ -14,6 +19,9 @@ def test_batch_transform():
     assert len(built) == 6
     assert SDK_VERSION in built['example-batch-job.run_task'].Resource
     assert batch_transform.job_definition == 'bar'
+    assert batch_transform.parameters['input'] == 'some_file'
+    assert batch_transform.container_overrides['vcpus'] == 123
+    assert batch_transform.container_overrides['memory'] == 123
 
 def test_glue_transform():
     '''test glue transform constructor'''
