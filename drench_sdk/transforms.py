@@ -136,7 +136,7 @@ class LambdaTransform(Transform):
 
         steps[f'{name}.run'] = TaskState(
             Resource=self.resource_arn,
-            Next=self.Next,
+            Next=f'{name}.cleanup',
             ResultPath='$',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
@@ -152,6 +152,12 @@ class LambdaTransform(Transform):
                 }
             ]
 
+        )
+
+        steps[f'{name}.cleanup'] = PassState(
+            Result='pass',
+            ResultPath='$.result.status',
+            Next=self.Next
         )
 
         return steps

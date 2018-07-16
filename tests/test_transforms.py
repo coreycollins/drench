@@ -14,7 +14,7 @@ def test_lambda_transform():
 
     built = lambda_transform.states('example', 'fail_state')
 
-    assert len(built) == 2
+    assert len(built) == 3
     assert built['example.run'].Resource == 'arn:test'
 
 def test_batch_transform():

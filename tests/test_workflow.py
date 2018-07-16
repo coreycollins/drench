@@ -29,7 +29,7 @@ def test_lambda_workflow():
         )
     )
 
-    assert len(workflow.sfn['States']) == 11
+    assert len(workflow.sfn['States']) == 12
     w_f = workflow.as_dict()
     assert w_f['States']['example.run']['Resource'] == 'arn:test'
 
