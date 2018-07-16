@@ -1,6 +1,21 @@
 '''test transform constructors'''
-from drench_sdk import BatchTransform, GlueTransform, QueryTransform
+from drench_sdk import LambdaTransform, BatchTransform, GlueTransform, QueryTransform
 from drench_sdk.config import SDK_VERSION
+
+
+def test_lambda_transform():
+    '''test glue transform constructor'''
+    lambda_transform = LambdaTransform(
+        resource_arn='arn:test',
+        parameters={
+            'workflow': 'test'
+        }
+    )
+
+    built = lambda_transform.states('example', 'fail_state')
+
+    assert len(built) == 2
+    assert built['example.run'].Resource == 'arn:test'
 
 def test_batch_transform():
     '''test batch transform constructor'''

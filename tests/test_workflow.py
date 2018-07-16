@@ -2,7 +2,7 @@
 #pylint:disable=line-too-long
 import pytest
 from drench_sdk.workflow import WorkFlow, UPDATE_DONE
-from drench_sdk.transforms import GlueTransform
+from drench_sdk.transforms import LambdaTransform, GlueTransform
 import drench_sdk.config
 
 def test_workflow():
@@ -15,6 +15,23 @@ def test_diff_version_workflow():
     drench_sdk.config.SDK_VERSION = 'canary'
     workflow = WorkFlow(comment='test', timeout=60, version=1.1)
     assert drench_sdk.config.SDK_VERSION in workflow.sfn['States'][UPDATE_DONE].Resource
+
+def test_lambda_workflow():
+    workflow = WorkFlow(comment='test', timeout=60, version=1.1)
+    workflow.add_state(
+        name='example',
+        start=True,
+        state=LambdaTransform(
+            resource_arn='arn:test',
+            parameters={
+                'workflow': 'test'
+            }
+        )
+    )
+
+    assert len(workflow.sfn['States']) == 11
+    w_f = workflow.as_dict()
+    assert w_f['States']['example.run']['Resource'] == 'arn:test'
 
 def test_add_transform():
     workflow = WorkFlow()

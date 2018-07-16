@@ -112,6 +112,50 @@ class Transform(State):
 
         return steps
 
+class LambdaTransform(Transform):
+    '''docstring for .'''
+    def __init__(self, resource_arn, parameters=None, **kwargs):
+        super(LambdaTransform, self).__init__(**kwargs)
+        self.resource_arn = resource_arn
+        self.parameters = parameters
+
+    def setup(self, name):
+        setup = super(LambdaTransform, self).setup(name)
+        setup['params'] = self.parameters
+        return setup
+
+    def states(self, name, on_fail):
+        '''compile and return all steps in the transform'''
+        steps = {}
+
+        steps[name] = PassState(
+            Result=self.setup(name),
+            ResultPath='$.next',
+            Next=f'{name}.run'
+        )
+
+        steps[f'{name}.run'] = TaskState(
+            Resource=self.resource_arn,
+            Next=self.Next,
+            ResultPath='$',
+            Retry=[{
+                'ErrorEquals': ['Lambda.Unknown'],
+                'IntervalSeconds': 30,
+                'MaxAttempts': 5,
+                'BackoffRate': 1.5
+            }],
+            Catch=[
+                {
+                    "ErrorEquals": ["States.ALL"],
+                    "ResultPath": "$.result.status",
+                    "Next": on_fail
+                }
+            ]
+
+        )
+
+        return steps
+
 class BatchTransform(Transform):
     '''docstring for .'''
     def __init__(self, job_queue, job_definition, parameters=None, **kwargs):
