@@ -29,6 +29,13 @@ def _sfn_waiter(execution_arn):
         if res['status'] == 'SUCCEEDED':
             return res['output']
         elif res['status'] in ['FAILED', 'TIMED_OUT', 'ABORTED']:
+            res = client.get_execution_history(
+                executionArn=execution_arn,
+                maxResults=2,
+                reverseOrder=True
+            )
+
+            click.echo(json.dumps(res, indent=4))
             raise click.ClickException('Error running statemachine')
 
         time.sleep(1)
