@@ -31,7 +31,7 @@ def _sfn_waiter(execution_arn):
         elif res['status'] in ['FAILED', 'TIMED_OUT', 'ABORTED']:
             res = client.get_execution_history(
                 executionArn=execution_arn,
-                maxResults=1,
+                maxResults=25,
                 reverseOrder=True
             )
 
