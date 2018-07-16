@@ -31,8 +31,7 @@ def _sfn_waiter(execution_arn):
         elif res['status'] in ['FAILED', 'TIMED_OUT', 'ABORTED']:
             res = client.get_execution_history(
                 executionArn=execution_arn,
-                maxResults=25,
-                reverseOrder=True
+                maxResults=25
             )
 
             click.echo(json.dumps(res, indent=4, default=str))
