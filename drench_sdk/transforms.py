@@ -158,11 +158,12 @@ class LambdaTransform(Transform):
 
 class BatchTransform(Transform):
     '''docstring for .'''
-    def __init__(self, job_queue, job_definition, parameters=None, **kwargs):
+    def __init__(self, job_queue, job_definition, parameters=None, container_overrides=None, **kwargs):
         super(BatchTransform, self).__init__(**kwargs)
         self.job_queue = job_queue
         self.job_definition = job_definition
         self.parameters = parameters
+        self.container_overrides = container_overrides
 
     def setup(self, name):
         setup = super(BatchTransform, self).setup(name)
@@ -171,11 +172,16 @@ class BatchTransform(Transform):
             'jobName': name,
             'jobQueue':self.job_queue,
             'jobDefinition': self.job_definition,
-            'parameters': {}
+            'parameters': {},
+            'containerOverrides': {}
         }
 
         if self.parameters:
             setup['params']['parameters'] = {**setup['params']['parameters'], **self.parameters}
+
+        if self.container_overrides:
+            setup['params']['containerOverrides'] = {**setup['params']['containerOverrides'], **self.container_overrides}
+
 
         return setup
 
