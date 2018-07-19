@@ -3,6 +3,28 @@ import pytest
 
 from lambdas.run_task import handler
 
+def test_run_string_subs():
+    event = {
+        'job_id': 3456,
+        'principal_id': 6543,
+        'next': {
+            'name': 'test-glue',
+            'type': 'glue',
+            'params': {
+                'JobName': 'foo',
+                'AllocatedCapacity': 2,
+                'Arguments': {
+                    '--key': '{{$.principal_id}}'
+                }
+            }
+        },
+        'result': {
+            'out_path':'some/path'
+        }
+    }
+    res = handler(event, {})
+    assert res['next']['params']['Arguments']['--key'] == '6543'
+
 def test_run_query():
     event = {
         'job_id': 1234,

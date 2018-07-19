@@ -21,7 +21,7 @@ def find_subs(dic, base):
                             repl = expr.find(base)[0].value
                             new_val = new_val.replace(match[0], str(repl))
 
-                    dic[key] = new_val
+                    dic[key] = str(new_val)
             except: #pylint:disable=bare-except
                 pass
     return dic
