@@ -29,6 +29,17 @@ resource "aws_lambda_function" "run_task" {
   publish           = true
 }
 
+# Stop SDK Task
+resource "aws_lambda_function" "stop_task" {
+  function_name     = "${terraform.workspace}-drench-sdk-stop-task"
+  filename          = "${module.lambda-package.output_filename}"
+  source_code_hash  = "${module.lambda-package.output_base64sha256}"
+  role              = "${data.terraform_remote_state.common.sdk.lambda_role}"
+  handler           = "stop_task.handler"
+  runtime           = "python3.6"
+  publish           = true
+}
+
 # Send SNS
 resource "aws_lambda_function" "send_sns" {
   function_name     = "${terraform.workspace}-drench-sdk-send-sns"
