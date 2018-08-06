@@ -24,10 +24,16 @@ def handler(event, _):
         'batch': stop_batch,
     }
 
-    res = boto3.client('glue', region_name='us-east-1').get_execution_history(
+    res = boto3.client('sfn', region_name='us-east-1').get_execution_history(
         executionArn=event['detail']['requestParameters']['executionArn'],
         reverseOrder=True)
 
-
-    task_output = next(e['output'] for e in res['events'] if e['type'] == 'TaskStateExited')
-    return runner[task_output['next']['type']](task_output)
+    try:
+        task_output = next(e['output'] for e in res['events'] if e['type'] == 'TaskStateExited')
+        try:
+            runner[task_output['next']['type']](task_output)
+            return None
+        except KeyError:
+            return None
+    except StopIteration:
+        return None
