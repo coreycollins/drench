@@ -40,6 +40,15 @@ resource "aws_lambda_function" "stop_task" {
   publish           = true
 }
 
+# Allow cloudwatch event to trigger stop task
+resource "aws_lambda_permission" "allow_cloudwatch_stop" {
+  statement_id   = "AllowExecutionFromCloudWatch"
+  action         = "lambda:InvokeFunction"
+  function_name  = "${aws_lambda_function.stop_task.function_name}"
+  principal      = "events.amazonaws.com"
+  source_arn     = "${aws_cloudwatch_event_rule.stop_event.arn}"
+}
+
 # Send SNS
 resource "aws_lambda_function" "send_sns" {
   function_name     = "${terraform.workspace}-drench-sdk-send-sns"
