@@ -1,11 +1,7 @@
 module "lambda-package" {
   source = "github.com/compassmarketing/terraform-package-lambda"
-  path = "lambdas"
-  deps_filename = "lib/dependencies.zip"
-
-  /* Optional, defaults to the value of $code, except the extension is
-   * replaced with ".zip" */
-  output_filename = "lambda_functions.zip"
+  path = "./lambdas"
+  requirements = "requirements.txt"
 }
 
 # Check SDK Task
@@ -27,6 +23,26 @@ resource "aws_lambda_function" "run_task" {
   handler           = "run_task.handler"
   runtime           = "python3.6"
   publish           = true
+}
+
+# Stop SDK Task
+resource "aws_lambda_function" "stop_task" {
+  function_name     = "${terraform.workspace}-drench-sdk-stop-task"
+  filename          = "${module.lambda-package.output_filename}"
+  source_code_hash  = "${module.lambda-package.output_base64sha256}"
+  role              = "${data.terraform_remote_state.common.sdk.lambda_role}"
+  handler           = "stop_task.handler"
+  runtime           = "python3.6"
+  publish           = true
+}
+
+# Allow cloudwatch event to trigger stop task
+resource "aws_lambda_permission" "allow_cloudwatch_stop" {
+  statement_id   = "AllowExecutionFromCloudWatch"
+  action         = "lambda:InvokeFunction"
+  function_name  = "${aws_lambda_function.stop_task.function_name}"
+  principal      = "events.amazonaws.com"
+  source_arn     = "${aws_cloudwatch_event_rule.stop_event.arn}"
 }
 
 # Send SNS

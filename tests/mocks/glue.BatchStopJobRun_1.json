@@ -1,0 +1,12 @@
+{
+  "status_code": 200,
+  "data": {
+    "Errors": [],
+    "SuccessfulSubmissions": [
+       {
+          "JobName": "foo",
+          "JobRunId": "1234"
+       }
+    ]
+  }
+}
