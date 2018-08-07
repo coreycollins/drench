@@ -1,4 +1,4 @@
-''' check the status of an aws task by run id and return it '''
+""" query last task of a sfn, if glue or batch, kill relevant job"""
 import json
 import boto3
 
