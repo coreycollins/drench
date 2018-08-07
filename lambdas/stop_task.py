@@ -1,4 +1,5 @@
 ''' check the status of an aws task by run id and return it '''
+import json
 import boto3
 
 def handler(event, _):
@@ -31,7 +32,8 @@ def handler(event, _):
         reverseOrder=True)
 
     try:
-        task_output = next(e['stateExitedEventDetails']['output'] for e in res['events'] if e['type'] == 'TaskStateExited')
+        raw_output = next(e['stateExitedEventDetails']['output'] for e in res['events'] if e['type'] == 'TaskStateExited')
+        task_output = json.loads(raw_output)
     except StopIteration:
         return "OK"
 
