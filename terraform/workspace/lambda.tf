@@ -1,11 +1,7 @@
 module "lambda-package" {
   source = "github.com/compassmarketing/terraform-package-lambda"
-  path = "lambdas"
-  deps_filename = "lib/dependencies.zip"
-
-  /* Optional, defaults to the value of $code, except the extension is
-   * replaced with ".zip" */
-  output_filename = "lambda_functions.zip"
+  path = "./lambdas"
+  requirements = "requirements.txt"
 }
 
 # Check SDK Task
