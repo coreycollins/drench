@@ -5,17 +5,7 @@
       {
         "type": "TaskStateExited",
         "stateExitedEventDetails": {
-          "output": {
-            "result": {
-              "job_id": "1234"
-            },
-            "next": {
-              "params": {
-                "JobName": "foo"
-              },
-              "type": "glue"
-            }
-          }
+          "output": "{\"result\": {\"job_id\": \"1234\"}, \"next\": {\"params\": {\"JobName\": \"foo\"}, \"type\": \"glue\"}}"
         }
       }
     ]

@@ -5,16 +5,9 @@
       {
         "type": "TaskStateExited",
         "stateExitedEventDetails": {
-          "output": {
-            "result": {
-              "job_id": "1234"
-            },
-            "next": {
-              "type": "batch"
-            }
+          "output": "{\"result\": {\"job_id\": \"1234\"},  \"next\": {\"type\": \"batch\"}}"
           }
         }
-      }
     ]
   }
 }
