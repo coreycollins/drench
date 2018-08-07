@@ -14,8 +14,7 @@ __pycache__/
 venv/
 
 # Build directory
-lambda_functions.zip
-.build/
+.lambda_build/
 
 # Terraform
 secret.tfvars
