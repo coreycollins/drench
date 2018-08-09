@@ -41,7 +41,7 @@ jobs:
             sudo unzip /tmp/terraform.zip -d /usr/local/bin
       - deploy:
           name: deploy
-          command: ./deploy.sh production
+          command: ./deploy.sh prod
 
 workflows:
   version: 2
