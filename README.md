@@ -1,53 +1,75 @@
-# Drench SDK
+## Drench
 
-A set of tools for automating business logic on the Drench API.
+Drench is a lightweight python sdk that can be used to programmatically build serverless workflows on AWS.
 
-Documentation:
+Similar to [Airflow](https://github.com/apache/incubator-airflow), you can build workflows that describe a directed acyclic graphs (DAGs) of steps. It uses AWS Step Functions under the hood to build a state machine that can execute different severless functions via calls to predefined lambda functions.
 
-## Quickstart Guide
+Its goal is to provide a way to orchestrate your serverless tasks that is simple and easy to organize.
 
-Install the sdk like so...
+### Getting started
+
+Install drench with pip. Python2.7+ is supported.
 
 ```
-pip install drench_sdk
+$ pip install drench
 ```
 
-Create a workflow script called `example.py`:
+Publish the Drench lambda functions used to execute states in your workflow to your AWS region. This will place a file called **drench.json** in your root directory which contains the resource arns. This is needed by Drench to run your workflows.
+
+```
+$ drench publish
+```
+
+Build a simple workflow that executes a custom lambda function.
 
 ```python
-from drench_sdk.workflow import WorkFlow
-from drench_sdk.transforms import BatchTransform
+""" sample_wf.py """
+import drench
 
-def main():
+def main(args=None):  
     '''main func'''
-    workflow = WorkFlow()
+	workflow = Workflow()
 
-    workflow.add_state(
-        name='example-batch-workflow',
-        state=BatchTransform(
-            job_definition='fetch-and-run',
-            job_queue='test',
-            parameters={
-                'script': 's3://temp.compass.com/test.py',
-                'args': 'hello'
-            }
-        )
+	workflow.add_state(  
+	    name='foobar',  
+	    start=True,  
+	    state=LambdaTransform(  
+	        Next='hello-world',  
+			resource_arn='arn:aws:lambda:us-east-1:12345:function:test'
     )
 
-    return workflow
+	return workflow
+)
 
-if __name__ == '__main__':
+if __name__ == '__main__':  
     main()
 ```
 
-Test the workflow script...
+To execute the workflow call the `run` command. Drench will create a step function on AWS and run it. It uses boto3 to call AWS and reads your credntials from the default location boto3 expects. You can set these manually by passing them in as environment variables. See [boto3](http://boto3.readthedocs.io) documentation for more details.
 
 ```
-drench_sdk run example.py
+$ drench run sample_wf.py
 ```
 
-Create a Sink on the Drench API...
+For a more in depth overview, you can read the [documentation](http://example.com).
 
-```
-drench_sdk sink put --name "Example Sink" example.py
-```
+### TODO
+
+* [ ] Ability to create parallel steps.
+* [ ] Better error handling
+* [ ] More examples
+
+### Links
+
+* [Documentation](http://example.com)
+* [Boto3](http://boto3.readthedocs.io)
+
+### Authors
+
+Corey Collins (@coreycollins)
+Ed Jaros (@ejaros)
+
+### License
+
+MIT.
+
