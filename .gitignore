@@ -16,6 +16,9 @@ venv/
 # Build directory
 .lambda_build/
 
+# Drench
+drench.json
+
 # Terraform
 secret.tfvars
 .terraform
