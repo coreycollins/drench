@@ -269,7 +269,7 @@ def cli():
 @click.option('--function_name', default='drench-lambda')
 @click.option('--role_name', default='drench-lambda-role')
 @click.option('--region', default='us-east-1')
-def publish(config_path, function_name, role_name, region):
+def init(config_path, function_name, role_name, region):
     """ Publish the resources needed by Drench. """
     config_file = os.path.join(config_path, 'drench.json')
 
