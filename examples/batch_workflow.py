@@ -1,28 +1,28 @@
+#!/usr/bin/env python
 '''example/test script for developing drench_sdk'''
-from drench_sdk.workflow import WorkFlow
-from drench_sdk.transforms import BatchTransform
+from drench_sdk import WorkFlow, AsyncTransform
 
-import drench_sdk.config
-drench_sdk.config.SDK_VERSION = 'canary'
+workflow = WorkFlow()
 
-def main(args=None):
-    '''main func'''
-    workflow = WorkFlow()
-
-    workflow.add_state(
-        name='example-batch-workflow',
-        start=True,
-        state=BatchTransform(
-            job_definition='canary-scriptrunner',
-            job_queue='test',
-            parameters={
+workflow.add_state(
+    name='example-batch-workflow',
+    start=True,
+    state=AsyncTransform(
+        task_type='batch',
+        params={
+            'jobName': 'example-batch-workflow',
+            'jobDefinition': 'canary-scriptrunner',
+            'jobQueue': 'core-test-queue-production',
+            'parameters': {
                 'script': 's3://temp.compass.com/test.py',
                 'args': 'hello'
             }
-        )
+        }
     )
+)
 
-    return workflow
 
 if __name__ == '__main__':
-    main()
+    workflow.run({
+        'input_file': 'test.txt'
+    })

@@ -1,11 +1,16 @@
 '''flows are fucntion-like packages of states'''
-from drench_sdk.utils import get_arn
 from drench_sdk.states import State, TaskState, WaitState, PassState, ChoiceState
 
-class Transform(State):
+def _add_alias(arn, rpc):
+    return '{}:{}'.format(arn, rpc)
+
+class AsyncTransform(State):
     '''docstring for Transform.'''
-    def __init__(self, **kwargs):
-        super(Transform, self).__init__(Type='meta', **kwargs)
+    def __init__(self, task_type, params=None, **kwargs):
+        super(AsyncTransform, self).__init__(Type='meta', **kwargs)
+        self.task_type = task_type
+        self.params = params
+
         self._default_steps = [
             'run_task',
             'wait',
@@ -17,14 +22,15 @@ class Transform(State):
     def setup(self, name): #pylint:disable=R0201
         '''build $.next'''
         setup = {
-            'name': name
+            'name': name,
+            'params': self.params,
+            'type': self.task_type
         }
 
         return setup
 
-    def states(self, name, on_fail):
+    def states(self, name, call_function, on_fail):
         '''compile and return all steps in the transform'''
-        from drench_sdk.config import SDK_VERSION
         steps = {}
 
         step_names = {step_name: f'{name}.{step_name}' for step_name in self._default_steps}
@@ -36,9 +42,9 @@ class Transform(State):
         )
 
         steps[step_names['run_task']] = TaskState(
-            Resource=get_arn('lambda', f'function:{SDK_VERSION}-drench-sdk-run-task'),
+            Resource=_add_alias(call_function, 'run_task'),
             Next=step_names['wait'],
-            ResultPath='$',
+            ResultPath='$.result.identifiers',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,
@@ -62,7 +68,7 @@ class Transform(State):
 
 
         steps[step_names['check_task']] = TaskState(
-            Resource=get_arn('lambda', f'function:{SDK_VERSION}-drench-sdk-check-task'),
+            Resource=_add_alias(call_function, 'check_task'),
             Next=step_names['check_choice'],
             ResultPath=f'$.result.status',
             Retry=[{
@@ -112,16 +118,20 @@ class Transform(State):
 
         return steps
 
-class LambdaTransform(Transform):
+class Transform(State):
     '''docstring for .'''
-    def __init__(self, resource_arn, parameters=None, **kwargs):
-        super(LambdaTransform, self).__init__(**kwargs)
+    def __init__(self, resource_arn, params=None, **kwargs):
+        super(Transform, self).__init__(**kwargs)
         self.resource_arn = resource_arn
-        self.parameters = parameters
+        self.params = params
 
     def setup(self, name):
-        setup = super(LambdaTransform, self).setup(name)
-        setup['params'] = self.parameters
+        '''build $.next'''
+        setup = {
+            'name': name,
+            'params': self.params
+        }
+
         return setup
 
     def states(self, name, on_fail):
@@ -162,77 +172,53 @@ class LambdaTransform(Transform):
 
         return steps
 
-class BatchTransform(Transform):
-    '''docstring for .'''
-    def __init__(self, job_queue, job_definition, parameters=None, container_overrides=None, **kwargs):
-        super(BatchTransform, self).__init__(**kwargs)
-        self.job_queue = job_queue
-        self.job_definition = job_definition
-        self.parameters = parameters
-        self.container_overrides = container_overrides
-
-    def setup(self, name):
-        setup = super(BatchTransform, self).setup(name)
-        setup['type'] = 'batch'
-        setup['params'] = {
-            'jobName': name,
-            'jobQueue':self.job_queue,
-            'jobDefinition': self.job_definition,
-            'parameters': {},
-            'containerOverrides': {}
-        }
-
-        if self.parameters:
-            setup['params']['parameters'] = {**setup['params']['parameters'], **self.parameters}
-
-        if self.container_overrides:
-            setup['params']['containerOverrides'] = {**setup['params']['containerOverrides'], **self.container_overrides}
-
-
-        return setup
-
-class GlueTransform(Transform):
-    '''docstring for .'''
-    def __init__(self, job_name, arguments=None, allocated_capacity=1, **kwargs):
-        super(GlueTransform, self).__init__(**kwargs)
-        self.job_name = job_name
-        self.arguments = arguments
-        self.allocated_capacity = allocated_capacity
-
-    def setup(self, name):
-        setup = super(GlueTransform, self).setup(name)
-        setup['type'] = 'glue'
-        setup['params'] = {
-            'JobName': self.job_name,
-            'AllocatedCapacity': self.allocated_capacity,
-            'Arguments': {}
-        }
-
-        if self.arguments:
-            setup['params']['Arguments'] = {**setup['params']['Arguments'], **self.arguments}
-
-        return setup
-
-
-class QueryTransform(Transform):
-    '''docstring for .'''
-    def __init__(self, query_string, database, out_path, **kwargs):
-        super(QueryTransform, self).__init__(**kwargs)
-        self.query_string = query_string
-        self.database = database
-        self.out_path = out_path
-
-    def setup(self, name):
-        setup = super(QueryTransform, self).setup(name)
-        setup['type'] = 'query'
-        setup['params'] = {
-            'QueryString': self.query_string,
-            'QueryExecutionContext': {
-                'Database': self.database
-            },
-            'ResultConfiguration': {
-                'OutputLocation': self.out_path
-            }
-        }
-
-        return setup
+# class BatchTransform(Transform):
+#     '''docstring for .'''
+#     def __init__(self, job_queue, job_definition, parameters=None, container_overrides=None, **kwargs):
+#         super(BatchTransform, self).__init__(**kwargs)
+#         self.job_queue = job_queue
+#         self.job_definition = job_definition
+#         self.parameters = parameters
+#         self.container_overrides = container_overrides
+#
+#     def setup(self, name):
+#         setup = super(BatchTransform, self).setup(name)
+#         setup['type'] = 'batch'
+#         setup['params'] = {
+#             'jobName': name,
+#             'jobQueue':self.job_queue,
+#             'jobDefinition': self.job_definition,
+#             'parameters': {},
+#             'containerOverrides': {}
+#         }
+#
+#         if self.parameters:
+#             setup['params']['parameters'] = {**setup['params']['parameters'], **self.parameters}
+#
+#         if self.container_overrides:
+#             setup['params']['containerOverrides'] = {**setup['params']['containerOverrides'], **self.container_overrides}
+#
+#
+#         return setup
+#
+# class GlueTransform(Transform):
+#     '''docstring for .'''
+#     def __init__(self, job_name, arguments=None, allocated_capacity=1, **kwargs):
+#         super(GlueTransform, self).__init__(**kwargs)
+#         self.job_name = job_name
+#         self.arguments = arguments
+#         self.allocated_capacity = allocated_capacity
+#
+#     def setup(self, name):
+#         setup = super(GlueTransform, self).setup(name)
+#         setup['type'] = 'glue'
+#         setup['params'] = {
+#             'JobName': self.job_name,
+#             'AllocatedCapacity': self.allocated_capacity,
+#             'Arguments': {}
+#         }
+#
+#         if self.arguments:
+#             setup['params']['Arguments'] = {**setup['params']['Arguments'], **self.arguments}
+#
+#         return setup

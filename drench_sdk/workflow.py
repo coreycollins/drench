@@ -1,31 +1,50 @@
 '''workflows: chained and orchestrated sets of transforms'''
-
+import os
 import json
+import time
+import uuid
+import boto3
 
-from drench_sdk.utils import get_arn
 from drench_sdk.states import  ChoiceState, FailState, PassState, SucceedState, State, TaskState
-from drench_sdk.transforms import Transform
+from drench_sdk.transforms import Transform, AsyncTransform
 
-SETUP = '__setup'
 FAILED = '__failed'
 FINISHED = '__finished'
 END_SELECTOR = '__end_selector'
 STATUS_TRANSLATE = '__status_translate'
-STATUS_RUNNING = '__status_running'
 STATUS_FINISHED = '__status_finished'
 STATUS_FAILED = '__status_failed'
-UPDATE_RUNNING = '__update_running'
-UPDATE_DONE = '__update_done'
-INJECT_SNS_TOPIC = '__inject_sns_topic'
-INJECT_SNS_SUBJECT = '__inject_sns_subject'
-DEATH_RATTLE = '__death_rattle'
+
+def _sfn_waiter(execution_arn):
+    """ Wait for sfn machine to exit """
+    client = boto3.client('stepfunctions')
+    while True:
+        res = client.describe_execution(executionArn=execution_arn)
+
+        if res['status'] == 'SUCCEEDED':
+            return res['output']
+        elif res['status'] in ['FAILED', 'TIMED_OUT', 'ABORTED']:
+            res = client.get_execution_history(
+                executionArn=execution_arn,
+                maxResults=25
+            )
+            print(json.dumps(res, indent=4, default=str))
+            raise Exception("State machine failed..")
+
+        time.sleep(5)
 
 class WorkFlow(object):
     """Generates a state machine for AWS SNF"""
 
-    def __init__(self, comment=None, timeout=None, version=None):
+    def __init__(self, config_file=None, comment=None, timeout=None, version=None):
         self.sfn = {}
-        from drench_sdk.config import SDK_VERSION
+
+        if not config_file:
+            config_file = os.path.join(os.curdir, 'drench.json')
+
+        resources = json.load(open(config_file, 'r'))
+        self.resource_arn = resources['function_arn']
+        self.role_arn = resources['role_arn']
 
         if comment:
             self.sfn['Comment'] = comment
@@ -36,25 +55,7 @@ class WorkFlow(object):
         if version:
             self.sfn['Version'] = version
 
-        self.sfn['StartAt'] = STATUS_RUNNING
-
         self.sfn['States'] = {
-            STATUS_RUNNING: PassState(
-                Result='running',
-                ResultPath='$.result.status',
-                Next=UPDATE_RUNNING
-            ),
-            UPDATE_RUNNING: TaskState(
-                Resource=get_arn('lambda', f'function:{SDK_VERSION}-drench-sdk-send-sns'),
-                Next=END_SELECTOR, # This SHOULD get updated before generation
-                ResultPath='$.sns.result',
-                Retry=[{
-                    'ErrorEquals': ['Lambda.Unknown'],
-                    'IntervalSeconds': 30,
-                    'MaxAttempts': 5,
-                    'BackoffRate': 1.5
-                }]
-            ),
             STATUS_TRANSLATE: ChoiceState(
                 Choices=[
                     {
@@ -69,27 +70,14 @@ class WorkFlow(object):
             STATUS_FINISHED: PassState(
                 Result='finished',
                 ResultPath='$.result.status',
-                Next=UPDATE_DONE
+                Next=END_SELECTOR
             ),
 
             STATUS_FAILED: PassState(
                 Result='failed',
                 ResultPath='$.result.status',
-                Next=UPDATE_DONE
+                Next=END_SELECTOR
             ),
-
-            UPDATE_DONE: TaskState(
-                Resource=get_arn('lambda', f'function:{SDK_VERSION}-drench-sdk-send-sns'),
-                Next=END_SELECTOR,
-                ResultPath='$.sns.result',
-                Retry=[{
-                    'ErrorEquals': ['Lambda.Unknown'],
-                    'IntervalSeconds': 30,
-                    'MaxAttempts': 5,
-                    'BackoffRate': 1.5
-                }]
-            ),
-
             END_SELECTOR: ChoiceState(
                 Choices=[
                     {
@@ -111,7 +99,7 @@ class WorkFlow(object):
             raise Exception(f'The transform name {name} is already in use')
 
         if start:
-            self.sfn['States'][UPDATE_RUNNING].Next = name
+            self.sfn['StartAt'] = name
 
         if not state.Next:
             state.Next = STATUS_TRANSLATE
@@ -121,6 +109,15 @@ class WorkFlow(object):
                 **self.sfn['States'],
                 **state.states(
                     name=name,
+                    on_fail=STATUS_TRANSLATE
+                )
+            }
+        elif isinstance(state, AsyncTransform):
+            self.sfn['States'] = {
+                **self.sfn['States'],
+                **state.states(
+                    name=name,
+                    call_function=self.resource_arn,
                     on_fail=STATUS_TRANSLATE
                 )
             }
@@ -135,6 +132,24 @@ class WorkFlow(object):
                 ]
             self.sfn['States'][name] = state
 
+    def run(self, params=None):
+        """ Run the workflow with a temporary statemachine """
+        client = boto3.client('stepfunctions')
+        print('Creating state machine...')
+        resp = client.create_state_machine(
+            name=uuid.uuid4().hex,
+            definition=self.to_json(),
+            roleArn=self.role_arn
+        )
+        machine_arn = resp["stateMachineArn"]
+
+        try:
+            print('Running state machine...')
+            resp = client.start_execution(stateMachineArn=machine_arn, input=json.dumps(params))
+            _sfn_waiter(resp['executionArn'])
+        finally:
+            print('Deleting state machine...')
+            client.delete_state_machine(stateMachineArn=machine_arn)
 
     def as_dict(self):
         """ return state machine as a dict """
@@ -146,7 +161,7 @@ class WorkFlow(object):
                         for (k, v) in obj.items() if v}
             return obj
 
-        if self.sfn['States'][UPDATE_RUNNING].Next == END_SELECTOR:
+        if not self.sfn['StartAt']:
             raise Exception('The workflow does not have a start state defined.')
 
         return serialize(self.sfn)

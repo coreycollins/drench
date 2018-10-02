@@ -16,7 +16,6 @@ import uuid
 import boto3
 import click
 from botocore.exceptions import ClientError
-import botocore.session
 
 def _load_workflow(filepath, args):
     """ Load the file and call the main method """
@@ -59,7 +58,6 @@ def _cannot_assume(error):
     message = error.response.get('Error', {}).get('Message', 'Unknown')
     return message == 'The role defined for the function cannot be assumed by Lambda.'
 
-
 class PublishCommand(object):
     """ Command class to publish a lambda package to AWS """
 
@@ -83,6 +81,11 @@ class PublishCommand(object):
 
         # Push lambda function
         function_arn = self._push_lambda(role_arn, buf)
+
+        # Create aliases
+        self._setup_alias('run_task')
+        self._setup_alias('check_task')
+        self._setup_alias('stop_task')
 
         return {
             'function_name': self.function_name,
@@ -115,11 +118,13 @@ class PublishCommand(object):
     def _build(self, tempdir):
         """ build the package """
         click.secho('Building package...', fg='green')
-        build_path = os.path.join(tempdir, 'package')
+        local_path = os.path.dirname(os.path.abspath(__file__))
+
+        shutil.copy(os.path.join(local_path, 'handler.py'), tempdir)
 
         # Find package path
-        module_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lambdas')
-        shutil.copytree(module_path, build_path)
+        module_path = os.path.join(local_path, 'lambdas')
+        shutil.copytree(module_path, os.path.join(tempdir, 'lambdas'))
 
         fnull = open(os.devnull, 'w')
         subprocess.check_call([
@@ -127,17 +132,17 @@ class PublishCommand(object):
             'install',
             'jsonpath_ng',
             '-t',
-            build_path
+            tempdir
         ], stdout=fnull)
 
         # zip together for distribution
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w') as myzip:
-            for base, _, files in os.walk(build_path, followlinks=True):
+            for base, _, files in os.walk(tempdir, followlinks=True):
                 for file in files:
                     if not re.match(r'.*\.pyc', file):
                         path = os.path.join(base, file)
-                        myzip.write(path, path.replace(build_path + '/', ''))
+                        myzip.write(path, path.replace(tempdir + '/', ''))
 
         return buf
 
@@ -161,7 +166,7 @@ class PublishCommand(object):
                             FunctionName=self.function_name,
                             Runtime='python3.6',
                             Role=role_arn,
-                            Handler='main.handler',
+                            Handler='handler.main',
                             Code={
                                 'ZipFile': buf.getvalue()
                             }
@@ -180,6 +185,26 @@ class PublishCommand(object):
 
         return function_arn
 
+    def _setup_alias(self, name):
+        lamba_client = self.session.client('lambda')
+        click.secho('Setting alias to stage...', fg='green')
+        try:
+            lamba_client.update_alias(
+                FunctionName=self.function_name,
+                Name=name,
+                FunctionVersion='$LATEST'
+            )
+        except ClientError as error:
+            if _resource_not_found(error):
+                click.secho('Creating new alias...', fg='yellow')
+                lamba_client.create_alias(
+                    FunctionName=self.function_name,
+                    Name=name,
+                    FunctionVersion='$LATEST'
+                )
+            else:
+                raise error
+
     def _setup_role(self):
          # Create lambda execution role
         iam_client = self.session.client('iam')
@@ -196,7 +221,7 @@ class PublishCommand(object):
                             "Sid": "",
                             "Effect": "Allow",
                             "Principal": {
-                                "Service": "lambda.amazonaws.com"
+                                "Service": ["lambda.amazonaws.com", "states.amazonaws.com"]
                             },
                             "Action": "sts:AssumeRole"
                         }
@@ -239,56 +264,7 @@ def cli():
     """ command group for drench_sdk """
     pass
 
-@cli.command('output', short_help='Generate output for a drench sdk workflow.')
-@click.option('--terraform', '-t', default=False, is_flag=True, help='Generate this output for terraform')
-@click.argument('filename', required=True)
-@click.argument('args', nargs=-1)
-def output(filename, terraform, args):
-    """ Generate a workflow and print it's output. """
-    full_path = os.path.join(os.curdir, filename)
-    workflow = _load_workflow(full_path, args)
-
-    # Print the workflow to JSON
-    if terraform:
-        print(json.dumps({'machine':workflow.to_json()}))
-    else:
-        click.echo(click.style(json.dumps(workflow.as_dict(), indent=4), fg='blue'))
-
-@cli.command('run', short_help='Test a workflow.')
-@click.option('--param', '-p', nargs=2, type=click.Tuple([str, str]), multiple=True)
-@click.option('--topic_arn', required=True)
-@click.option('--role_arn', required=True)
-@click.argument('filename', required=True)
-@click.argument('args', nargs=-1)
-def run(filename, topic_arn, role_arn, param, args):
-    """ Run a workflow by executing a test statemachine. """
-    full_path = os.path.join(os.curdir, filename)
-    workflow = _load_workflow(full_path, args)
-
-    client = boto3.client('stepfunctions')
-    click.echo(click.style('Creating state machine...', fg='blue'))
-    resp = client.create_state_machine(
-        name=uuid.uuid4().hex,
-        definition=workflow.to_json(),
-        roleArn=role_arn
-    )
-    machine_arn = resp["stateMachineArn"]
-
-    try:
-        click.echo(click.style('Running state machine...', fg='blue'))
-
-        params = {k:v for (k, v) in param}
-
-        params['topic_arn'] = topic_arn
-
-        resp = client.start_execution(stateMachineArn=machine_arn, input=json.dumps(params))
-        _sfn_waiter(resp['executionArn'])
-        click.echo(click.style('State machine ran successfully.', fg='green'))
-    finally:
-        click.echo(click.style('Deleting state machine...', fg='blue'))
-        client.delete_state_machine(stateMachineArn=machine_arn)
-
-@cli.command('publish', short_help='Publish Drench resources.')
+@cli.command('init', short_help='Initialize Drench resources.')
 @click.option('--config_path', '-c', default=os.curdir)
 @click.option('--function_name', default='drench-lambda')
 @click.option('--role_name', default='drench-lambda-role')
