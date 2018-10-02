@@ -45,7 +45,7 @@ To execute the workflow call the `run` command. Drench will create a step functi
 $ python sample_wf.py
 ```
 
-For a more in depth overview, you can read the [documentation](http://example.com).
+For a more in depth overview, you can read the [documentation](http://drench.io).
 
 ### TODO
 
@@ -60,8 +60,8 @@ For a more in depth overview, you can read the [documentation](http://example.co
 
 ### Authors
 
-Corey Collins (@coreycollins)
-Ed Jaros (@ejaros)
+* Corey Collins (@coreycollins)
+* Ed Jaros (@ejaros)
 
 ### License
 
