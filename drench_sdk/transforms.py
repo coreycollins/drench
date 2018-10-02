@@ -121,7 +121,7 @@ class AsyncTransform(State):
 class Transform(State):
     '''docstring for .'''
     def __init__(self, resource_arn, params=None, **kwargs):
-        super(Transform, self).__init__(**kwargs)
+        super(Transform, self).__init__(Type='meta', **kwargs)
         self.resource_arn = resource_arn
         self.params = params
 
@@ -147,7 +147,7 @@ class Transform(State):
         steps[f'{name}.run'] = TaskState(
             Resource=self.resource_arn,
             Next=f'{name}.cleanup',
-            ResultPath='$',
+            ResultPath='$.result.output',
             Retry=[{
                 'ErrorEquals': ['Lambda.Unknown'],
                 'IntervalSeconds': 30,

@@ -143,6 +143,8 @@ class WorkFlow(object):
         )
         machine_arn = resp["stateMachineArn"]
 
+        params = params or {}
+
         try:
             print('Running state machine...')
             resp = client.start_execution(stateMachineArn=machine_arn, input=json.dumps(params))

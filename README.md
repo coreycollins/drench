@@ -17,38 +17,32 @@ $ pip install drench
 Publish the Drench lambda functions used to execute states in your workflow to your AWS region. This will place a file called **drench.json** in your root directory which contains the resource arns. This is needed by Drench to run your workflows.
 
 ```
-$ drench publish
+$ drench init
 ```
 
 Build a simple workflow that executes a custom lambda function.
 
 ```python
 """ sample_wf.py """
-import drench
+from drench_sdk import WorkFlow, Transform
 
-def main(args=None):  
-    '''main func'''
-	workflow = Workflow()
+workflow = WorkFlow()
 
-	workflow.add_state(  
-	    name='foobar',  
-	    start=True,  
-	    state=LambdaTransform(  
-	        Next='hello-world',  
-			resource_arn='arn:aws:lambda:us-east-1:12345:function:test'
-    )
-
-	return workflow
+workflow.add_state(
+    name='hello-world',
+    start=True,
+    state=Transform('arn:aws:lambda:us-east-1:909533743566:function:test')
 )
 
-if __name__ == '__main__':  
-    main()
+
+if __name__ == '__main__':
+    workflow.run()
 ```
 
 To execute the workflow call the `run` command. Drench will create a step function on AWS and run it. It uses boto3 to call AWS and reads your credntials from the default location boto3 expects. You can set these manually by passing them in as environment variables. See [boto3](http://boto3.readthedocs.io) documentation for more details.
 
 ```
-$ drench run sample_wf.py
+$ python sample_wf.py
 ```
 
 For a more in depth overview, you can read the [documentation](http://example.com).
@@ -72,4 +66,3 @@ Ed Jaros (@ejaros)
 ### License
 
 MIT.
-
